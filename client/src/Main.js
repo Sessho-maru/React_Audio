@@ -13,20 +13,20 @@ class Main extends Component
 {
     static alterLabel = {
         setPlayingStatus: {
-            text: (dist) => { if (window.location.href === rootDir.server) document.getElementById(`${dist}`).innerHTML = "stop"; },
-            color: (dist) => { if (window.location.href === rootDir.server) document.getElementById(`${dist}_selected`).classList.add("indigo"); }
+            text: (dist) => { if (window.location.href === rootDir.local) document.getElementById(`${dist}`).innerHTML = "stop"; },
+            color: (dist) => { if (window.location.href === rootDir.local) document.getElementById(`${dist}_selected`).classList.add("indigo"); }
         },
         setStopStatus: {
-            text: (dist) => { if (window.location.href === rootDir.server) document.getElementById(`${dist}`).innerHTML = "play"; },
-            color: (dist) => { if (window.location.href === rootDir.server) document.getElementById(`${dist}_selected`).classList.remove("indigo"); }
+            text: (dist) => { if (window.location.href === rootDir.local) document.getElementById(`${dist}`).innerHTML = "play"; },
+            color: (dist) => { if (window.location.href === rootDir.local) document.getElementById(`${dist}_selected`).classList.remove("indigo"); }
         },
         setQueuedStatus: {
-            text: (dist, currentlySelected = 'enqueue') => { if (window.location.href === rootDir.server) document.getElementById(`${dist}`).innerHTML = currentlySelected; },
-            color: (dist) => { if (window.location.href === rootDir.server) {document.getElementById(`${dist}_selected`).classList.add("grey"); document.getElementById(`${dist}_selected`).classList.add("darken-3");} }
+            text: (dist, currentlySelected = 'enqueue') => { if (window.location.href === rootDir.local) document.getElementById(`${dist}`).innerHTML = currentlySelected; },
+            color: (dist) => { if (window.location.href === rootDir.local) {document.getElementById(`${dist}_selected`).classList.add("grey"); document.getElementById(`${dist}_selected`).classList.add("darken-3");} }
         },
         turningOffQueueState: {
-            text: (dist) => { if (window.location.href === rootDir.server) document.getElementById(`${dist}`).innerHTML = 'play'; },
-            color: (dist) => { if (window.location.href === rootDir.server) {document.getElementById(`${dist}_selected`).classList.remove("grey"); document.getElementById(`${dist}_selected`).classList.remove("darken-3");} }
+            text: (dist) => { if (window.location.href === rootDir.local) document.getElementById(`${dist}`).innerHTML = 'play'; },
+            color: (dist) => { if (window.location.href === rootDir.local) {document.getElementById(`${dist}_selected`).classList.remove("grey"); document.getElementById(`${dist}_selected`).classList.remove("darken-3");} }
         }
     }
 
@@ -84,7 +84,7 @@ class Main extends Component
 
                 if (this.isQueuingMode === true)
                 {
-                    if (window.location.href === rootDir.server)
+                    if (window.location.href === rootDir.local)
                     {
                         this.toggleQueuingMode();
                         this._playAndChangeState();
