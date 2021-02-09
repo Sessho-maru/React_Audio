@@ -73,7 +73,7 @@ class AudioInfo extends Component
                         .catch( (err) => {
                             console.log(err);
                         });
-                }, 1000);
+                }, 2000);
             })
             .catch( (err) => {
                 console.log(err);
