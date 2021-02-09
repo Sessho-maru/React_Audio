@@ -16,6 +16,7 @@
     "express": "^4.17.1"
   },
   "devDependencies": {
+    "http-proxy-middleware": "^1.0.6",
     "nodemon": "^2.0.3"
   }
 }

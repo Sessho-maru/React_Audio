@@ -18,13 +18,6 @@ app.get('/api/url', (req, res) => {
     axios.get(encodeURI(req.query.search))
         .then( (res) => {
 
-            /*
-            fs.writeFile('yt_res.html', res.data, (err) => {
-                if (err) throw err;
-                console.log('Saved!');
-            });
-            */
-
             let rawString = "";
             let $ = cheerio.load(res.data);
             $('script').each( (i, element) => {
