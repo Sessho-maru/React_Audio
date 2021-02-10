@@ -1,5 +1,5 @@
 # About
-This page is a music player builted on web environment and supports some functions. For example
+This page is a music player built on web environment and supports some functions. For example
 - Play/pause, shuffle, repeat, queueing playback functions
 - Parse tags( `title`, `artist`, `album`, `release year`, `album cover` ) written in audio file
 - Hits Youtube search using audio's tag as keyword, crawls result and render it
