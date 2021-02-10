@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import TagInfo from './TagInfo'
+import TagInfo from './TagInfo';
 import YTInfo from './YTInfo';
 
 const axios = require('axios');

@@ -506,7 +506,7 @@ class Main extends Component
                         <div className="controller">
                             <div className="controls">
 
-                                <div className="queue">
+                                <div className="queue waves-effect waves-light">
                                     <i id="queue_icon" className="medium material-icons" onClick={ (event) => { 
                                             this.isQueuingMode === false ? event.target.classList.add('clicked') : event.target.classList.remove('clicked');
                                             if (this.isShuffleMode === true) { document.getElementById('shuffle_icon').classList.remove('clicked'); this.isShuffleMode = false; }
@@ -514,7 +514,7 @@ class Main extends Component
                                             this.toggleQueuingMode();
                                         }}>{"plus_one"}</i>
                                 </div>
-                                <div className="shuffle">
+                                <div className="shuffle waves-effect waves-light">
                                     <i id="shuffle_icon" className="medium material-icons" onClick={ (event) => {
                                             this.isShuffleMode === false ? event.target.classList.add('clicked') : event.target.classList.remove('clicked');
                                             this.isShuffleMode = !(this.isShuffleMode);
@@ -524,7 +524,7 @@ class Main extends Component
                                             this.setState({isNeedToReRender: true});
                                         }}>{"shuffle"}</i>
                                 </div>
-                                <div className="repeat">
+                                <div className="repeat waves-effect waves-light">
                                     <i id="repeat_icon" className="medium material-icons" onClick={ (event) => { 
                                             this.isRepeatMode === false ? event.target.classList.add('clicked') : event.target.classList.remove('clicked')
                                             this.isRepeatMode = !(this.isRepeatMode);
@@ -534,7 +534,7 @@ class Main extends Component
                                             this.setState({isNeedToReRender: true});
                                         }}>{"repeat_one"}</i>
                                 </div>
-                                <div className="next">
+                                <div className="next waves-effect waves-light">
                                     <i className="medium material-icons" onClick={ () => { if (this.CUE.CUR !== "") { this.queueNextAudio(tagArray[this.CUE.CUR].duration); } }}>{"skip_next"}</i>
                                 </div>
 
