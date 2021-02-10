@@ -32,6 +32,9 @@ then, Turn on express server
 ```
 once server listening, Browse /client folder and command
 ```
+  @ .../React_Audio-master
+  cd client
+  
   @ .../React_Audio-master/client
   npm start
 ```
