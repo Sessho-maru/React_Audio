@@ -5,8 +5,6 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 app.use(cors());
 
-const fs = require('fs');
-
 const port = 5000;
 const OFFSET_INDEX_CONTAIN_YTINITIALDATA = 27;
 let ytInfos = [];
