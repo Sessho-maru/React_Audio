@@ -534,7 +534,7 @@ class Main extends Component
                                             this.setState({isNeedToReRender: true});
                                         }}>{"repeat_one"}</i>
                                 </div>
-                                <div className="next waves-effect waves-light">
+                                <div className="next waves-effect waves-green">
                                     <i className="medium material-icons" onClick={ () => { if (this.CUE.CUR !== "") { this.queueNextAudio(tagArray[this.CUE.CUR].duration); } }}>{"skip_next"}</i>
                                 </div>
 

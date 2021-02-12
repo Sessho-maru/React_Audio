@@ -6,7 +6,6 @@ const cheerio = require('cheerio');
 app.use(cors());
 
 const port = 5000;
-const OFFSET_INDEX_CONTAIN_YTINITIALDATA = 27;
 let ytInfos = [];
 
 app.get('/api/url', (req, res) => {
@@ -18,15 +17,17 @@ app.get('/api/url', (req, res) => {
 
             let rawString = "";
             let $ = cheerio.load(res.data);
+
             $('script').each( (i, element) => {
-                if (i === OFFSET_INDEX_CONTAIN_YTINITIALDATA)
+                let text = $(element).contents().first().text();
+                if (text.search("var ytInitialData = ") !== -1)
                 {
+                    console.log(i);
                     rawString = $(element).contents().first().text();
                 }
             });
 
             let splited = rawString.split("var ytInitialData = ");
-
             let youTubeJson = splited[1].slice(0, -1);
             
             youtubeJson = JSON.parse(youTubeJson)['contents']['twoColumnSearchResultsRenderer']['primaryContents']['sectionListRenderer']['contents'][0]['itemSectionRenderer']['contents'];

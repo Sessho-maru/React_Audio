@@ -26,7 +26,7 @@ class AudioInfo extends Component
         {
             receivedParam = this.props.location;
         }
-        console.log(receivedParam);
+        // console.log(receivedParam);
     }
 
     componentDidMount()
