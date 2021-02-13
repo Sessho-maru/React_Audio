@@ -7,12 +7,11 @@ app.use(cors());
 
 const port = 5000;
 let ytInfos = [];
+let keyword = "";
 
-app.get('/api/url', (req, res) => {
-    console.log(`serchTerm: ${req.query.search}`);
-    ytInfos = [];
-
-    axios.get(encodeURI(req.query.search))
+function hitYoutube(keyword)
+{
+    axios.get(encodeURI(keyword))
         .then( (res) => {
 
             let rawString = "";
@@ -79,13 +78,28 @@ app.get('/api/url', (req, res) => {
         .catch( (err) => {
             console.log(err);
         });
+}
 
-    res.status(200).send({msg: 'processed'});
+app.get('/api/url', (req, res) => {
+    console.log(`serchTerm: ${req.query.search}`);
+    ytInfos = [];
+
+    hitYoutube(keyword = req.query.search);
+    res.status(200).send({msg: 'processing...'});
 });
 
 app.get('/api/get', (req, res) => {
     console.log(ytInfos);
-    res.status(200).send({msg: 'finished', result: ytInfos});
+
+    if (ytInfos.length > 0)
+    {
+        res.status(200).send({msg: 'finished', result: ytInfos});
+    }
+    else
+    {
+        hitYoutube(keyword);
+        res.status(412).send({msg: 'request failed. try again...', result: null});
+    }
 });
 
 app.listen(port, () => {

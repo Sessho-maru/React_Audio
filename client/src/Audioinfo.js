@@ -46,38 +46,45 @@ class AudioInfo extends Component
         axios.get(`/api/url?search=${dist}`)
             .then( (res) => {
                 console.log(res.data.msg);
-
-                this.timeoutId = setTimeout( () =>{
-                    axios.get('/api/get')
-                        .then( (res) => {
-                            clearTimeout(this.timeoutId);
-
-                            console.log(res.data.result);
-                            let received = res.data.result;
-
-                            this.YTInfos = received.map( (each, i) => {
-                                let youtubeInfo = {
-                                    videoId: each.videoId,
-                                    thumbnailUrl: each.thumbnailUrl,
-                                    title: each.title,
-                                    viewCount: each.viewCount,
-                                    duration: each.duration
-                                };
-
-                                return (
-                                    <YTInfo key={i} YTInfoObj={youtubeInfo} />
-                                );
-                            });
-                            this.setState({ isLoaded: true });
-                        })
-                        .catch( (err) => {
-                            console.log(err);
-                        });
-                }, 2000);
+                this.getYTObj();
             })
             .catch( (err) => {
                 console.log(err);
             });
+    }
+
+    getYTObj()
+    {
+        this.timeoutId = setTimeout( () =>{
+            axios.get('/api/get')
+                .then( (res) => {
+                    clearTimeout(this.timeoutId);
+
+                    console.log(res.data);
+                    let received = res.data.result;
+
+                    this.YTInfos = received.map( (each, i) => {
+                        let youtubeInfo = {
+                            videoId: each.videoId,
+                            thumbnailUrl: each.thumbnailUrl,
+                            title: each.title,
+                            viewCount: each.viewCount,
+                            duration: each.duration
+                        };
+
+                        return (
+                            <YTInfo key={i} YTInfoObj={youtubeInfo} />
+                        );
+                    });
+                    this.setState({ isLoaded: true });
+                })
+                .catch( (err) => {
+                    clearTimeout(this.timeoutId);
+
+                    console.log(err.response.data);
+                    this.getYTObj();
+                });
+        }, 1000);
     }
 
     render()
