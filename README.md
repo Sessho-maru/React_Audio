@@ -19,9 +19,9 @@ This page is a music player built on web environment and supports some functions
 This player is best when your audio well tagged with information<br/>
 And to use Youtube crwaling function, `title` and `artist` tag are required<br/>
 > `title` and `artist`: Required to get Youtube search result<br/><br/>
-> Plus `album name`, `album cover`: Best<br/>
+> Plus `album name`, `album cover`: Best<br/><br/>
 
-I prepared some music as the test examples<br/>
+I prepared some music samples for the test in /samples<br/>
 Enjoy with your favorite tunes!
 
 <br/>
