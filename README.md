@@ -2,7 +2,7 @@
 This page is a music player built on web environment and supports some functions. For example
 - Play/pause, shuffle, repeat, queueing playback functions
 - Hits Youtube search using audio's tag as keyword, crawls result and render it<br/>
-<img src="https://raw.githubusercontent.com/Sessho-maru/React_Audio/master/example.gif" />
+<img src="https://raw.githubusercontent.com/Sessho-maru/React_Audio/master/example.gif"/><br/>
 - Parse tags( `title`, `artist`, `album`, `release year`, `album cover` ) written in audio file
 
 This player is best when your audio well tagged with information<br/>
