@@ -7,7 +7,7 @@ let tagArray = [];
 let numProcessedItem = 0;
 let numDurationsReceived = 0;
 
-const rootDir = {local: 'http://localhost:3000/', server: 'http://18.236.166.51/'};
+const rootDir = {local: 'http://localhost:3000/', server: 'http://54.245.28.131/'};
 
 class Main extends Component
 {
@@ -550,8 +550,8 @@ class Main extends Component
                     </Router>
                 </div>
 
-                <input type="file" id="new" onChange={ (event) => {this.insertTagInfoAndChangeState(event, true)} } multiple hidden/>
-                <input type="file" id="append" onChange={ (event) => {this.insertTagInfoAndChangeState(event, false)} } multiple hidden/>
+                <input type="file" accept="audio/*" id="new" onChange={ (event) => {this.insertTagInfoAndChangeState(event, true)} } multiple hidden/>
+                <input type="file" accept="audio/*" id="append" onChange={ (event) => {this.insertTagInfoAndChangeState(event, false)} } multiple hidden/>
             </div>
         );
     }
