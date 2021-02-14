@@ -2,7 +2,7 @@
 This page is a music player built on web environment and supports some functions. For example
 * Playback
     -
-    - Play/pause, shuffle, repeat, queueing playback functions<br/>
+    - Play/pause, shuffle, repeat, queueing<br/>
       <br/><img src="https://raw.githubusercontent.com/Sessho-maru/React_Audio/master/example_2.gif"/>
     <br/><br/><br/>
 * Parse tags
@@ -16,7 +16,7 @@ This page is a music player built on web environment and supports some functions
 
 <a href="http://54.245.28.131/" target="_blank">DEMO</a><br/>
 
-This player is best when your audio well tagged with information<br/>
+This player is best when your audio have been well tagged with information<br/>
 And to use Youtube crwaling function, `title` and `artist` tag are required<br/>
 > `title` and `artist`: Required to get Youtube search result<br/><br/>
 > Plus `album name`, `album cover`: Best<br/><br/>
@@ -47,9 +47,6 @@ then, Turn on express server
 ```
 once server listening, Browse /client folder and command
 ```
-  @ .../React_Audio-master
-  cd client
-  
   @ .../React_Audio-master/client
   npm start
 ```
