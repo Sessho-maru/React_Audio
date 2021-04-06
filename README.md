@@ -11,7 +11,7 @@ This page is a music player built on web environment and supports some functions
   <br/><br/><br/>
 * Crawling Youtube
   -
-  - Hits Youtube search using audio's tag as keyword, crawls result and render it<br/>
+  - Hits Youtube search using audio's tag as keyword, crawls result and render<br/>
     <br/><img src="https://raw.githubusercontent.com/Sessho-maru/React_Audio/master/example.gif"/><br/><br/><br/><br/>
 
 <a href="http://54.185.201.229/" target="_blank">DEMO</a><br/>
