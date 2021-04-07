@@ -383,7 +383,7 @@ class Main extends Component
                 },
                 onError: function(error) {
                     console.log("jsmediaTags.read() has been run, but failed");
-                    checker(undefined, each.name);
+                    checker(undefined, null);
                     numProcessedItem = numProcessedItem + 1;
                 }
             });

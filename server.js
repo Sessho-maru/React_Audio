@@ -7,11 +7,11 @@ app.use(cors());
 
 const port = 5000;
 let ytInfos = [];
-let keyword = "";
+let ytSearch = "";
 
-function hitYoutube(keyword)
+function hitYoutube(ytSearch)
 {
-    axios.get(encodeURI(keyword))
+    axios.get(encodeURI(ytSearch))
         .then( (res) => {
 
             let rawString = "";
@@ -22,7 +22,7 @@ function hitYoutube(keyword)
                 if (text.search("var ytInitialData = ") !== -1)
                 {
                     console.log(i);
-                    rawString = $(element).contents().first().text();
+                    rawString = text;
                 }
             });
 
@@ -84,7 +84,7 @@ app.get('/api/url', (req, res) => {
     console.log(`serchTerm: ${req.query.search}`);
     ytInfos = [];
 
-    hitYoutube(keyword = req.query.search);
+    hitYoutube(ytSearch = req.query.search);
     res.status(200).send({msg: 'processing...'});
 });
 
@@ -97,7 +97,7 @@ app.get('/api/get', (req, res) => {
     }
     else
     {
-        hitYoutube(keyword);
+        hitYoutube(ytSearch);
         res.status(412).send({msg: 'request failed. try again...', result: null});
     }
 });
