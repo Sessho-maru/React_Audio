@@ -21,9 +21,6 @@ And to use Youtube crwaling function, `title` and `artist` tag are required<br/>
 > `title` and `artist`: Required to get Youtube search result<br/><br/>
 > Plus `album name`, `album cover`: Best<br/><br/>
 
-I prepared some music samples for test in /samples folder<br/>
-Enjoy with your favorite tunes!
-
 <br/>
 
 # How to Install on local machine
