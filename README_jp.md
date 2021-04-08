@@ -22,14 +22,14 @@
 
 <br/>
 
-# How to Install on local machine
-Install dependencies
+# ローカル設置方法
+nodeパッケージ設置
 ```
   @ .../React_Audio-master
   npm run install_app
 ```
 
-then, Turn on express server
+expressサーバーを稼働
 ```
   @ .../React_Audio-master
   node server
@@ -41,7 +41,7 @@ then, Turn on express server
 ```
 ----------------CORS-enabled web server listening on port 5000----------------
 ```
-once server listening, Browse /client folder and command
+サーバーが効いている上で、/clientディレクトリーで以下を入力
 ```
   @ .../React_Audio-master/client
   npm start
