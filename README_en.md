@@ -14,15 +14,12 @@ This page is a music player built on web environment and supports some functions
   - Hits Youtube search using audio's tag as keyword, crawls result and render it<br/>
     <br/><img src="https://raw.githubusercontent.com/Sessho-maru/React_Audio/master/example.gif"/><br/><br/><br/><br/>
 
-<a href="http://54.245.28.131/" target="_blank">DEMO</a><br/>
+### **[DEMO](http://54.185.201.229/)**
 
 This player is best when your audio have been well tagged with information<br/>
 And to use Youtube crwaling function, `title` and `artist` tag are required<br/>
 > `title` and `artist`: Required to get Youtube search result<br/><br/>
 > Plus `album name`, `album cover`: Best<br/><br/>
-
-I prepared some music samples for test in /samples folder<br/>
-Enjoy with your favorite tunes!
 
 <br/>
 

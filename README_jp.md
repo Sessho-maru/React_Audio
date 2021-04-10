@@ -14,22 +14,22 @@
   - タグに入力されている情報をキーワードとしてユーチューブ検索を行い、その結果をページの上にレンダリングします<br/>
     <br/><img src="https://raw.githubusercontent.com/Sessho-maru/React_Audio/master/example.gif"/><br/><br/><br/><br/>
 
-<a href="http://54.185.201.229/" target="_blank">DEMO</a><br/>
+### **[DEMO](http://54.185.201.229/)**
 
 このウェブアプリはファイルの中でタグが多く入力されてあればあるほど多い機能が使えます。<br/>
-> `タイトル` and `作曲家`: ユーチューブ検索結果をクローリングする時要ります。<br/><br/>
-> さらに、アルバム名前とアルバムイメージの情報が書いあるとこのページの全機能が使えます<br/><br/>
+> `タイトル` and `作曲家`: ユーチューブ検索を行う為必要です。<br/><br/>
+> さらに、`アルバム名前`と`アルバムイメージ`の情報が書いてあるとこのページの全機能が使えます<br/><br/>
 
 <br/>
 
-# How to Install on local machine
-Install dependencies
+# ローカル設置方法
+nodeパッケージ設置
 ```
   @ .../React_Audio-master
   npm run install_app
 ```
 
-then, Turn on express server
+expressサーバーを稼働
 ```
   @ .../React_Audio-master
   node server
@@ -41,7 +41,7 @@ then, Turn on express server
 ```
 ----------------CORS-enabled web server listening on port 5000----------------
 ```
-once server listening, Browse /client folder and command
+サーバーが効いている上で、/clientディレクトリーで以下を入力
 ```
   @ .../React_Audio-master/client
   npm start
