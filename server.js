@@ -5,9 +5,22 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 app.use(cors());
 
-const port = 5000;
+const port = 1234;
 let ytInfos = [];
 let ytSearch = "";
+let byteArray = [];
+
+const fs = require('fs');
+const path = require('path');
+
+const tunes = [
+	{ id: 0, src: __dirname + '/samples/0_bts_dynamite.mp3' },
+	{ id: 1, src: __dirname + '/samples/1_momo_bbombbom.mp3' },
+	{ id: 2, src: __dirname + '/samples/2_maroon5_dontWannaKnow.mp3' },
+	{ id: 3, src: __dirname + '/samples/3_noriki_youNeedMe.mp3' },
+	{ id: 4, src: __dirname + '/samples/4_anri_lastSummerWhisper.mp3' },
+	{ id: 5, src: __dirname + '/samples/5_yuuko_shibuya_5am.mp3' }
+];
 
 function hitYoutube(ytSearch)
 {
@@ -100,6 +113,21 @@ app.get('/api/get', (req, res) => {
         hitYoutube(ytSearch);
         res.status(412).send({msg: 'request failed. try again...', result: null});
     }
+});
+
+app.get('/api/samples', (req, res) => {
+    tunes.map( (each, i) => {
+        fs.readFile(each.src, (err, data) => {
+            if (err) throw err;
+            byteArray.push(data);
+        });
+	});
+    res.status(200).send({msg: 'Reading file...'});
+});
+
+app.get('/api/samples/get', (req, res) => {
+    console.log(byteArray);
+    res.status(200).send({msg: 'fetching...', body: byteArray});
 });
 
 app.listen(port, () => {

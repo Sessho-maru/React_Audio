@@ -1,3 +1,4 @@
+import axios from 'axios';
 import React, { Component } from 'react';
 import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
 import AudioCard from './AudioCard';
@@ -7,7 +8,7 @@ let tagArray = [];
 let numProcessedItem = 0;
 let numDurationsReceived = 0;
 
-const rootDir = {local: 'http://localhost:3000/', server: 'http://54.245.28.131/'};
+const rootDir = {local: 'http://localhost:3000/', server: '???'};
 
 class Main extends Component
 {
@@ -278,7 +279,7 @@ class Main extends Component
         }
     }
     
-    insertTagInfoAndChangeState = (event, initializing) => { // 수정가능
+    insertTagInfoAndChangeState = (fileList, initializing) => { // 수정가능
         if (initializing === true)
         {
             if (numProcessedItem > 0)
@@ -301,7 +302,7 @@ class Main extends Component
                 this.CUE.CUR = "";
                 this.CUE.NEXT = "";
 
-                if (event.target.files.length === 0)
+                if (fileList.length === 0)
                 {
                     this.setState({
                         isPlaying: false,
@@ -361,7 +362,6 @@ class Main extends Component
             }
         }
 
-        let fileList = event.target.files;
         let numAdded = fileList.length;
         tagArray.length = numProcessedItem + numAdded;
 
@@ -438,6 +438,34 @@ class Main extends Component
             startingIndex = startingIndex + 1;
         }
     }
+
+    loadSamples()
+    {
+        axios.get('/api/samples')
+            .then( (res) => {
+                console.log(res.data);
+
+                setTimeout( () => {
+                    axios.get('/api/samples/get')
+                        .then( (res) => {
+                            console.log(res.data);
+
+                            let buffers = res.data.body;
+                            let samplesList = buffers.map( (each, i) => {
+                                return new File([new Uint8Array(each.data)], 'sample_'+i+'.mp3', { type: 'audio/mpeg' });
+                            });
+
+                            this.insertTagInfoAndChangeState(samplesList, false);
+                        })  
+                        .catch( (err) => {
+                            console.log(err);
+                        });
+                }, 250);
+            })
+            .catch( (err) => {
+                console.log(err);
+            });
+    }
     
     componentDidMount()
     {
@@ -479,6 +507,7 @@ class Main extends Component
         return (
             <div className="row">
                 <div id="nav" className="col xl2 l2 m2 s2">
+                    <button onClick={ () => {this.loadSamples()} }>click</button>
                     <div className="fixed-action-btn">
                         <a className="btn-floating btn-small grey lighten-1"><i className="large material-icons">add</i></a>
                         <ul>
@@ -550,8 +579,8 @@ class Main extends Component
                     </Router>
                 </div>
 
-                <input type="file" accept="audio/*" id="new" onChange={ (event) => {this.insertTagInfoAndChangeState(event, true)} } multiple hidden/>
-                <input type="file" accept="audio/*" id="append" onChange={ (event) => {this.insertTagInfoAndChangeState(event, false)} } multiple hidden/>
+                <input type="file" accept="audio/*" id="new" onChange={ (event) => {this.insertTagInfoAndChangeState(event.target.files, true)} } multiple hidden/>
+                <input type="file" accept="audio/*" id="append" onChange={ (event) => {this.insertTagInfoAndChangeState(event.target.files, false)} } multiple hidden/>
             </div>
         );
     }
