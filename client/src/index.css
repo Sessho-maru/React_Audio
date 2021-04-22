@@ -102,6 +102,12 @@ code {
   margin-top: 10px;
 }
 
+.App #samplesButton {
+  display: flex;
+  justify-content: center;
+  margin-top: 10%;
+}
+
 
 
 .App #preloader {

@@ -116,6 +116,7 @@ app.get('/api/get', (req, res) => {
 });
 
 app.get('/api/samples', (req, res) => {
+    byteArray = [];
     tunes.map( (each, i) => {
         fs.readFile(each.src, (err, data) => {
             if (err) throw err;

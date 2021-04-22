@@ -51,6 +51,8 @@ class Main extends Component
         this.isShuffleMode = false;
         this.isRepeatMode = false;
 
+        this.isSampleBeeningLoad = false;
+
         this.state = {
             isNeedToReRender: false,
             isPlaying: false,
@@ -346,7 +348,7 @@ class Main extends Component
         }
 
         let triggerRerender = (numAdded) => {
-            this.reRenderPage(numAdded);
+            this.reRenderAudioCards(numAdded);
             if (initializing === true)
             {   
                 this.setState({
@@ -390,8 +392,8 @@ class Main extends Component
         });
     }
 
-    reRenderPage = (numBeGoingToRender) => {
-        console.log("reRenderPage() is going to run!!");
+    reRenderAudioCards = (numBeGoingToRender) => {
+        console.log("reRenderAudioCards() is going to run!!");
 
         let startingIndex = 0;
         if (numProcessedItem === 0)
@@ -441,6 +443,8 @@ class Main extends Component
 
     loadSamples()
     {
+        this.isSampleBeeningLoad = true;
+
         axios.get('/api/samples')
             .then( (res) => {
                 console.log(res.data);
@@ -455,12 +459,17 @@ class Main extends Component
                                 return new File([new Uint8Array(each.data)], 'sample_'+i+'.mp3', { type: 'audio/mpeg' });
                             });
 
+                            this.isSampleBeeningLoad = -1;
                             this.insertTagInfoAndChangeState(samplesList, false);
                         })  
                         .catch( (err) => {
                             console.log(err);
                         });
-                }, 250);
+                }, 75);
+
+                this.setState({
+                    isNeedToReRender: true
+                });
             })
             .catch( (err) => {
                 console.log(err);
@@ -503,11 +512,37 @@ class Main extends Component
     render()
     {
         console.log("render() has ran");
+        let loadSampleButton = "";
+
+        switch (this.isSampleBeeningLoad) {
+            case false :
+                loadSampleButton = <a className="waves-effect waves-light btn-large" onClick={ () => {this.loadSamples()} }><i className="material-icons right">cloud</i>Load Samples</a>;
+                break;
+            case true :
+                loadSampleButton =  <div className="preloader-wrapper big active">
+                                        <div className="spinner-layer spinner-blue-only">
+                                        <div className="circle-clipper left">
+                                            <div className="circle"></div>
+                                        </div>
+                                        <div className="gap-patch">
+                                            <div className="circle"></div>
+                                        </div>
+                                        <div className="circle-clipper right">
+                                            <div className="circle"></div>
+                                        </div>
+                                        </div>
+                                    </div>
+                break;
+            default:
+                loadSampleButton = "";
+        }
         
         return (
             <div className="row">
                 <div id="nav" className="col xl2 l2 m2 s2">
-                    <button onClick={ () => {this.loadSamples()} }>click</button>
+                    <div id="samplesButton">
+                        { loadSampleButton }
+                    </div>
                     <div className="fixed-action-btn">
                         <a className="btn-floating btn-small grey lighten-1"><i className="large material-icons">add</i></a>
                         <ul>
