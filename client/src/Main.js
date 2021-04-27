@@ -444,33 +444,22 @@ class Main extends Component
     loadSamples()
     {
         this.isSampleBeeningLoad = true;
+        this.setState({
+            isNeedToReRender: true
+        });
 
-        axios.get('/api/samples')
+        axios.get('/api/samples/get')
             .then( (res) => {
                 console.log(res.data);
 
-                setTimeout( () => {
-                    axios.get('/api/samples/get')
-                        .then( (res) => {
-                            console.log(res.data);
-
-                            let buffers = res.data.body;
-                            let samplesList = buffers.map( (each, i) => {
-                                return new File([new Uint8Array(each.data)], 'sample_'+i+'.mp3', { type: 'audio/mpeg' });
-                            });
-
-                            this.isSampleBeeningLoad = -1;
-                            this.insertTagInfoAndChangeState(samplesList, false);
-                        })  
-                        .catch( (err) => {
-                            console.log(err);
-                        });
-                }, 75);
-
-                this.setState({
-                    isNeedToReRender: true
+                let buffers = res.data.body;
+                let samplesList = buffers.map( (each, i) => {
+                    return new File([new Uint8Array(each.data)], 'sample_'+i+'.mp3', { type: 'audio/mpeg' });
                 });
-            })
+
+                this.isSampleBeeningLoad = -1;
+                this.insertTagInfoAndChangeState(samplesList, false);
+            })  
             .catch( (err) => {
                 console.log(err);
             });

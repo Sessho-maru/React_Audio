@@ -8,10 +8,9 @@ app.use(cors());
 const port = 1234;
 let ytInfos = [];
 let ytSearch = "";
-let byteArray = [];
 
 const fs = require('fs');
-const path = require('path');
+let byteArray = [];
 
 const tunes = [
 	{ id: 0, src: __dirname + '/samples/0_bts_dynamite.mp3' },
@@ -115,22 +114,16 @@ app.get('/api/get', (req, res) => {
     }
 });
 
-app.get('/api/samples', (req, res) => {
-    byteArray = [];
+app.get('/api/samples/get', (req, res) => {
+    res.status(200).send({msg: 'fetching...', body: byteArray});
+});
+
+app.listen(port, () => {
+    console.log(`----------------CORS-enabled web server listening on port ${port}----------------`)
     tunes.map( (each, i) => {
         fs.readFile(each.src, (err, data) => {
             if (err) throw err;
             byteArray.push(data);
         });
 	});
-    res.status(200).send({msg: 'Reading file...'});
-});
-
-app.get('/api/samples/get', (req, res) => {
-    console.log(byteArray);
-    res.status(200).send({msg: 'fetching...', body: byteArray});
-});
-
-app.listen(port, () => {
-    console.log(`----------------CORS-enabled web server listening on port ${port}----------------`)
 });
