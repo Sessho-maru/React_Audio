@@ -43,7 +43,7 @@ expressサーバーを稼働
 ```
 ----------------CORS-enabled web server listening on port 5000----------------
 ```
-サーバーが効いている上で、/clientディレクトリーで以下を入力
+サーバーが効いた上で、/clientディレクトリーで以下を入力
 ```
   @ .../React_Audio-master/client
   npm start
