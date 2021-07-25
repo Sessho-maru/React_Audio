@@ -45,7 +45,7 @@ class Main extends Component
             NEXT: ""
         };
 
-        this.cueSheet = [];
+        this.queSheet = [];
         
         this.isQueuingMode = false;
         this.isShuffleMode = false;
@@ -75,14 +75,17 @@ class Main extends Component
         }
 
         this.timeoutId = setTimeout( () => {
-            if (this.cueSheet.length === 0 && this.CUE.NEXT === tagArray.length) {
+            const isQueueEmpty = this.queSheet.length === 0;
+            const isNextEndOfTagArray = this.CUE.NEXT === tagArray.length;
+            
+            if (isQueueEmpty && isNextEndOfTagArray) {
                 this._stopAndChangeState();
             }
             else
             {
-                if (this.cueSheet.length > 0)
+                if (this.queSheet.length > 0)
                 {
-                    this.CUE.NEXT = (this.cueSheet.shift());
+                    this.CUE.NEXT = (this.queSheet.shift());
                 }
 
                 if (this.isQueuingMode === true)
@@ -142,9 +145,9 @@ class Main extends Component
                 continue;
             }
 
-            if (this.cueSheet.includes(index) === true)
+            if (this.queSheet.includes(index) === true)
             {
-                Main.alterLabel.setQueuedStatus.text(index, this.cueSheet.indexOf(index) + 1);
+                Main.alterLabel.setQueuedStatus.text(index, this.queSheet.indexOf(index) + 1);
             }
             else
             {
@@ -208,12 +211,12 @@ class Main extends Component
             return;
         }
 
-        if (this.isQueuingMode === true) // Add AUDIO into cuesheet
+        if (this.isQueuingMode === true) // Add AUDIO into quesheet
         {
-            if (this.cueSheet.includes(this.CUE.NEXT) === true)
+            if (this.queSheet.includes(this.CUE.NEXT) === true)
             {
-                let pos = this.cueSheet.indexOf(this.CUE.NEXT);
-                this.cueSheet.splice(pos, 1);
+                let pos = this.queSheet.indexOf(this.CUE.NEXT);
+                this.queSheet.splice(pos, 1);
                 
                 this.updateQueuedNumber();
                 this.setState({
@@ -222,8 +225,8 @@ class Main extends Component
                 return;
             }
 
-            this.cueSheet.push(this.CUE.NEXT);
-            Main.alterLabel.setQueuedStatus.text(this.CUE.NEXT, this.cueSheet.length);
+            this.queSheet.push(this.CUE.NEXT);
+            Main.alterLabel.setQueuedStatus.text(this.CUE.NEXT, this.queSheet.length);
             this.setState({
                 isNeedtoReRender: true
             });
@@ -231,7 +234,7 @@ class Main extends Component
         }
 
         console.log("PLAY");
-        if (this.CUE.CUR === "")
+        if (this.CUE.CUR === "") // Initialize AUDIO object for the first time or when stopped
         {
             this.audio = new Audio(URL.createObjectURL(tagArray[this.CUE.NEXT].file));
             this.audio.play();
@@ -316,7 +319,7 @@ class Main extends Component
         }
 
         let checker = (tag, fileName) => {
-            if (typeof(tag) === "undefined") { alert(`No any given Tag data!\n:${fileName}`); return; }
+            if (tag === undefined) { alert(`No any given Tag data!\n:${fileName}`); return; }
             if (tag.tags.title === undefined) { alert(`No given {Title}!\n:${fileName}\nto fetch Youtube search result, {Title} and {Artist} is required`); tag.tags.title = "untitled"; }
             if (tag.tags.artist === undefined) { alert(`No given {Artistname}!\n:${fileName}\nto fetch Youtube search result, {Title} and {Artistname} is required`); tag.tags.artist = ""; }
             if (tag.tags.picture === undefined) { alert(`No given Albumart data!\n:${fileName}`); }
@@ -441,8 +444,7 @@ class Main extends Component
         }
     }
 
-    loadSamples()
-    {
+    loadSamples = () => {
         this.isSampleBeeningLoad = true;
         this.setState({
             isNeedToReRender: true
@@ -480,7 +482,7 @@ class Main extends Component
         if (this.state.isPlaying === true) { console.log(`nowPlaying: ${this.CUE.CUR}, duration: ${tagArray[this.CUE.CUR].duration - this.pausedAt}`); }
         console.log(`numProcessedItem: ${numProcessedItem}, tagArray.length: ${tagArray.length}`);
         console.log(`numDurationsReceived: ${numDurationsReceived}, tagArray.length: ${tagArray.length}`);
-        console.log("Queued: ", this.cueSheet);
+        console.log("Queued: ", this.queSheet);
         console.log("tagArray: ", tagArray);
         console.log("============================");
         if (this.isShuffleMode || this.isRepeatMode) { 
@@ -488,7 +490,7 @@ class Main extends Component
         }else {
             document.getElementById('queue_icon').classList.remove('queue_disabled');
         }
-        this.cueSheet.map( (each) => {
+        this.queSheet.map( (each) => {
             console.assert(typeof(each) === 'number');
         });
     }
