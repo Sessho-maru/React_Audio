@@ -4,20 +4,16 @@ import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
 import AudioCard from './AudioCard';
 import AudioInfo from './Audioinfo';
 
-let tagArray = [];
-let numProcessedItem = 0;
-let numDurationsReceived = 0;
-
 const rootDir = {local: 'http://localhost:3000/', server: '???'};
 
 class Main extends Component
 {
     static alterLabel = {
-        setPlayingStatus: {
+        setLabelPlaying: {
             text: (dist) => { if (window.location.href === rootDir.local) document.getElementById(`${dist}`).innerHTML = "stop"; },
             color: (dist) => { if (window.location.href === rootDir.local) document.getElementById(`${dist}_selected`).classList.add("indigo"); }
         },
-        setStopStatus: {
+        setLabelStopped: {
             text: (dist) => { if (window.location.href === rootDir.local) document.getElementById(`${dist}`).innerHTML = "play"; },
             color: (dist) => { if (window.location.href === rootDir.local) document.getElementById(`${dist}_selected`).classList.remove("indigo"); }
         },
@@ -37,6 +33,8 @@ class Main extends Component
         this.jsmediatags = require('jsmediatags');
 
         this.audioCards = [];
+        this.cardIndex = 0;
+
         this.timeoutId = "";
         this.audio = null;
         this.pausedAt = 0;
@@ -45,7 +43,7 @@ class Main extends Component
             NEXT: ""
         };
 
-        this.queSheet = [];
+        this.cueSheet = [];
         
         this.isQueuingMode = false;
         this.isShuffleMode = false;
@@ -54,8 +52,8 @@ class Main extends Component
         this.isSampleBeeningLoad = false;
 
         this.state = {
-            isNeedToReRender: false,
             isPlaying: false,
+            paused: false
         };
     }
 
@@ -75,17 +73,14 @@ class Main extends Component
         }
 
         this.timeoutId = setTimeout( () => {
-            const isQueueEmpty = this.queSheet.length === 0;
-            const isNextEndOfTagArray = this.CUE.NEXT === tagArray.length;
-            
-            if (isQueueEmpty && isNextEndOfTagArray) {
+            if (this.cueSheet.length === 0 && this.CUE.NEXT === tagArray.length) {
                 this._stopAndChangeState();
             }
             else
             {
-                if (this.queSheet.length > 0)
+                if (this.cueSheet.length > 0)
                 {
-                    this.CUE.NEXT = (this.queSheet.shift());
+                    this.CUE.NEXT = (this.cueSheet.shift());
                 }
 
                 if (this.isQueuingMode === true)
@@ -145,9 +140,9 @@ class Main extends Component
                 continue;
             }
 
-            if (this.queSheet.includes(index) === true)
+            if (this.cueSheet.includes(index) === true)
             {
-                Main.alterLabel.setQueuedStatus.text(index, this.queSheet.indexOf(index) + 1);
+                Main.alterLabel.setQueuedStatus.text(index, this.cueSheet.indexOf(index) + 1);
             }
             else
             {
@@ -211,12 +206,12 @@ class Main extends Component
             return;
         }
 
-        if (this.isQueuingMode === true) // Add AUDIO into quesheet
+        if (this.isQueuingMode === true) // Add AUDIO into cuesheet
         {
-            if (this.queSheet.includes(this.CUE.NEXT) === true)
+            if (this.cueSheet.includes(this.CUE.NEXT) === true)
             {
-                let pos = this.queSheet.indexOf(this.CUE.NEXT);
-                this.queSheet.splice(pos, 1);
+                let pos = this.cueSheet.indexOf(this.CUE.NEXT);
+                this.cueSheet.splice(pos, 1);
                 
                 this.updateQueuedNumber();
                 this.setState({
@@ -225,8 +220,8 @@ class Main extends Component
                 return;
             }
 
-            this.queSheet.push(this.CUE.NEXT);
-            Main.alterLabel.setQueuedStatus.text(this.CUE.NEXT, this.queSheet.length);
+            this.cueSheet.push(this.CUE.NEXT);
+            Main.alterLabel.setQueuedStatus.text(this.CUE.NEXT, this.cueSheet.length);
             this.setState({
                 isNeedtoReRender: true
             });
@@ -234,7 +229,7 @@ class Main extends Component
         }
 
         console.log("PLAY");
-        if (this.CUE.CUR === "") // Initialize AUDIO object for the first time or when stopped
+        if (this.CUE.CUR === "")
         {
             this.audio = new Audio(URL.createObjectURL(tagArray[this.CUE.NEXT].file));
             this.audio.play();
@@ -283,41 +278,12 @@ class Main extends Component
             appendFileDialog.click();
         }
     }
-    
-    insertTagInfoAndChangeState = (fileList, initializing) => { // 수정가능
-        if (initializing === true)
-        {
-            if (numProcessedItem > 0)
-            {
-                tagArray = [];
-                this.audioCards = [];
 
-                if (this.state.isPlaying === true || this.pausedAt !== 0)
-                {
-                    this.audio.pause();
-                    this.audio = null;
-                    this.pausedAt = 0;
+    asyncProcessAudio = async (file) => {
+        await this.asyncReadTagThenInitCard(file);
+    }
 
-                    Main.alterLabel.setStopStatus.text(this.CUE.CUR);
-                    Main.alterLabel.setStopStatus.color(this.CUE.CUR);
-                }
-
-                numProcessedItem = 0;
-                numDurationsReceived = 0;
-                this.CUE.CUR = "";
-                this.CUE.NEXT = "";
-
-                if (fileList.length === 0)
-                {
-                    this.setState({
-                        isPlaying: false,
-                        isNeedtoReRender: true
-                    });
-                    return;
-                }
-            }   
-        }
-
+    asyncReadTagThenInitCard = async (file) => {
         let checker = (tag, fileName) => {
             if (tag === undefined) { alert(`No any given Tag data!\n:${fileName}`); return; }
             if (tag.tags.title === undefined) { alert(`No given {Title}!\n:${fileName}\nto fetch Youtube search result, {Title} and {Artist} is required`); tag.tags.title = "untitled"; }
@@ -325,126 +291,108 @@ class Main extends Component
             if (tag.tags.picture === undefined) { alert(`No given Albumart data!\n:${fileName}`); }
         }
 
-        let getDuration = (file, index) => {
-            let fr = new FileReader();
-            fr.readAsArrayBuffer(file);
-            fr.onload = (readEvent) => {
-                var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                audioContext.decodeAudioData(readEvent.target.result, (buffer) => {
-                    
-                    tagArray[index].duration = buffer.duration;
-                    console.log(`duration: ${buffer.duration} of ${index} is inserted`);
+        this.jsmediatags.read(file, {
+            onSuccess: (tag) => {
+                console.log("jsmediaTags.read() has been run");
+                checker(tag, file.name);
 
-                    this.audioCards[index] =    <div key={index} className="container">
-                                                    { React.cloneElement(this.audioCards[index].props.children, { isDone: true }) }
-                                                </div>
-                    numDurationsReceived = numDurationsReceived + 1;
-                    if (numDurationsReceived === tagArray.length)
-                    {
-                        console.log("processing was completed");
-                        this.setState({
-                            isNeedToReRender: true
-                        });
-                    }
-                });
-            };
-        }
-
-        let triggerRerender = (numAdded) => {
-            this.reRenderAudioCards(numAdded);
-            if (initializing === true)
-            {   
-                this.setState({
-                    isPlaying: false,
-                    isNeedtoReRender: true
-                });
+                this.initAudioCard(tag);
+                this.cardIndex++;
+                /*
+                    subscribeListner()
+                        all duration loaded
+                            then assign all of isDone true
+                            and call render 
+                */
+            },
+            onError: (error) => {
+                console.log("jsmediaTags.read() has been run, but failed" + error);
+                // checker(undefined, null);
             }
-            else
-            {
-                this.setState({
-                    isNeedtoReRender: true
-                });
-            }
-        }
-
-        let numAdded = fileList.length;
-        tagArray.length = numProcessedItem + numAdded;
-
-        Array.from(fileList).map( (each) => {
-            console.log("insertTagInfo->map() has ran");
-
-            this.jsmediatags.read(each, {
-
-                onSuccess: function(tag) {
-                    console.log("jsmediaTags.read() has been run");
-                    
-                    checker(tag, each.name);
-                    tag.tags.file = each;
-                    tagArray[numProcessedItem] = tag.tags;
-                    getDuration(each, numProcessedItem);
-
-                    numProcessedItem = numProcessedItem + 1;
-                    if (numProcessedItem === tagArray.length) { triggerRerender(numAdded); }
-                },
-                onError: function(error) {
-                    console.log("jsmediaTags.read() has been run, but failed");
-                    checker(undefined, null);
-                    numProcessedItem = numProcessedItem + 1;
-                }
-            });
-        });
+        });    
     }
 
-    reRenderAudioCards = (numBeGoingToRender) => {
-        console.log("reRenderAudioCards() is going to run!!");
+    initAudioCard = (tag) => {
+        console.log("initAudioCard() is going to run!!");
+        let metadata = {
+            pathname: `/${this.cardIndex}`,
+            audioInfo: {
+                title: tag.title,
+                artist: tag.artist,
+                album: tag.album,
+                year: tag.year,
+                track: tag.track,
+            },
+            albumArtUrl: "",
+            index: this.cardIndex
+        };
 
-        let startingIndex = 0;
-        if (numProcessedItem === 0)
+        if (tag.picture === undefined) 
         {
-            startingIndex = 0;
+            metadata.albumArtUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/1200px-No_image_available.svg.png";
         }
         else
         {
-            startingIndex = numProcessedItem - numBeGoingToRender;
+            const { data, type } = tag.picture;
+            const byteArray = new Uint8Array(data);
+            const blob = new Blob([byteArray], { type });
+            metadata.albumArtUrl = URL.createObjectURL(blob);
         }
 
-        for (let i = 0; i < numBeGoingToRender; i++)
+        this.audioCards[this.cardIndex] =   <div key={this.cardIndex} className="container">
+                                                <AudioCard CUE={ this.CUE } audioMetadata={ metadata } _play={ this._playAndChangeState }/>
+                                            </div>
+    }
+    
+    handleFileinputThenRender = (fileList, initializing) => { // 수정가능
+        if (initializing === true)
         {
-            let paramsForAudioInfo = {
-                pathname: `/${startingIndex}`,
-                audioInfo: {
-                    title: tagArray[startingIndex].title,
-                    artist: tagArray[startingIndex].artist,
-                    album: tagArray[startingIndex].album,
-                    year: tagArray[startingIndex].year,
-                    track: tagArray[startingIndex].track,
-                },
-                isHaveArt: true,
-                albumArtUrl: "",
-                index: startingIndex
-            };
-
-            if (tagArray[startingIndex].picture === undefined) 
+            if (this.cardIndex > 0)
             {
-                paramsForAudioInfo.isHaveArt = false;
-                paramsForAudioInfo.albumArtUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/1200px-No_image_available.svg.png";
-            }
-            else
-            {
-                const { data, type } = tagArray[startingIndex].picture;
-                const byteArray = new Uint8Array(data);
-                const blob = new Blob([byteArray], { type });
-                paramsForAudioInfo.albumArtUrl = URL.createObjectURL(blob);
-            }
+                this.audioCards = [];
 
-            this.audioCards[startingIndex] =    <div key={startingIndex} className="container">
-                                                    <AudioCard CUE={ this.CUE } audioInfoParams={ paramsForAudioInfo } _play={ this._playAndChangeState }/>
-                                                </div>
-            startingIndex = startingIndex + 1;
+                if (this.state.isPlaying === true || this.state.paused === true)
+                {
+                    this.audio = null;
+                    this.pausedAt = 0;
+
+                    // Main.alterLabel.setLabelStopped.text(this.CUE.CUR);
+                    // Main.alterLabel.setLabelStopped.color(this.CUE.CUR);
+                }
+                this.CUE.CUR = "";
+                this.CUE.NEXT = "";
+
+                if (fileList.length === 0)
+                {
+                    this.setState({
+                        isPlaying: false,
+                        paused: false
+                    });
+                    return;
+                }
+            }   
         }
+
+
+        [...fileList].forEach( (each) => {
+            console.log("insertTagInfo->map() has ran");
+            await this.asyncProcessAudio(each);
+        });
+
+        /*
+            await processAudioAndCards()
+            processAudioAndCards()
+                does: 
+                    prosess audio and initialization
+                    get duration
+                    assign this.audioCard array
+        */
     }
 
-    loadSamples = () => {
+    
+
+    loadSamples()
+    {
         this.isSampleBeeningLoad = true;
         this.setState({
             isNeedToReRender: true
@@ -482,7 +430,7 @@ class Main extends Component
         if (this.state.isPlaying === true) { console.log(`nowPlaying: ${this.CUE.CUR}, duration: ${tagArray[this.CUE.CUR].duration - this.pausedAt}`); }
         console.log(`numProcessedItem: ${numProcessedItem}, tagArray.length: ${tagArray.length}`);
         console.log(`numDurationsReceived: ${numDurationsReceived}, tagArray.length: ${tagArray.length}`);
-        console.log("Queued: ", this.queSheet);
+        console.log("Queued: ", this.cueSheet);
         console.log("tagArray: ", tagArray);
         console.log("============================");
         if (this.isShuffleMode || this.isRepeatMode) { 
@@ -490,7 +438,7 @@ class Main extends Component
         }else {
             document.getElementById('queue_icon').classList.remove('queue_disabled');
         }
-        this.queSheet.map( (each) => {
+        this.cueSheet.map( (each) => {
             console.assert(typeof(each) === 'number');
         });
     }
@@ -605,8 +553,8 @@ class Main extends Component
                     </Router>
                 </div>
 
-                <input type="file" accept="audio/*" id="new" onChange={ (event) => {this.insertTagInfoAndChangeState(event.target.files, true)} } multiple hidden/>
-                <input type="file" accept="audio/*" id="append" onChange={ (event) => {this.insertTagInfoAndChangeState(event.target.files, false)} } multiple hidden/>
+                <input type="file" accept="audio/*" id="new" onChange={ (event) => {this.insertTagInfoAndChangeState(event.target.files, true)} } multiple hidden preload="metadata"/>
+                <input type="file" accept="audio/*" id="append" onChange={ (event) => {this.insertTagInfoAndChangeState(event.target.files, false)} } multiple hidden preload="metadata"/>
             </div>
         );
     }
