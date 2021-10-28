@@ -1,5 +1,5 @@
 # About
-This page is a music player built on web environment and supports some　util functions. For example
+This page is a music player built on web environment and supports some　utility functions. For instance
 * Playback
     -
     - Play/pause, shuffle, repeat, queueing<br/>
