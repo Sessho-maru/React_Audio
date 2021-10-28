@@ -1,5 +1,5 @@
 # About
-This page is a music player built on web environment and supports some functions. For example
+This page is a music player built on web environment and supports some　util functions. For example
 * Playback
     -
     - Play/pause, shuffle, repeat, queueing<br/>
@@ -14,11 +14,9 @@ This page is a music player built on web environment and supports some functions
   - Hits Youtube search using audio's tag as keyword, crawls result and render it<br/>
     <br/><img src="https://raw.githubusercontent.com/Sessho-maru/React_Audio/master/example.gif"/><br/><br/><br/><br/>
 
-### **[DEMO](http://34.217.72.58/)**
-
-This player is best when your audio have been well tagged with information<br/>
-And to use Youtube crwaling function, `title` and `artist` tag are required<br/>
-> `title` and `artist`: Required to get Youtube search result<br/><br/>
+The more tag information offered the more funtionality can be used<br/>
+And for crawling youtube, `title` and `artist` tags are required<br/>
+> `title` and `artist`: Required to crawl Youtube<br/><br/>
 > Plus `album name`, `album cover`: Best<br/><br/>
 
 <br/>
