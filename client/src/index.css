@@ -164,3 +164,7 @@ code {
 .App .btn-floating.btn-small i {
   font-size: 2vw;
 }
+
+.App .card-label {
+  font-size: 15px;
+}

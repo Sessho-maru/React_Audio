@@ -8,32 +8,24 @@ const rootDir = {local: 'http://localhost:3000/', server: '???'};
 
 class Main extends Component
 {
-	setLabel = (flag, dist, queueIdx = 'enqueue') => {
-		if (window.location.href === rootDir.local)
-		{
-			switch(flag)
-			{
-				case 'play':
-					document.getElementById(`${dist}`).innerHTML = "stop";
-					document.getElementById(`${dist}_selected`).classList.add("indigo");
-					break;
-				case 'stop':
-					document.getElementById(`${dist}`).innerHTML = "play"; 
-					document.getElementById(`${dist}_selected`).classList.remove("indigo");
-					break;
-				case 'queue-on':
-					document.getElementById(`${dist}`).innerHTML = queueIdx;
-					document.getElementById(`${dist}_selected`).classList.add("grey"); document.getElementById(`${dist}_selected`).classList.add("darken-3");
-					break;
-				case 'queue-off':
-					document.getElementById(`${dist}`).innerHTML = 'play';
-					document.getElementById(`${dist}_selected`).classList.remove("grey"); document.getElementById(`${dist}_selected`).classList.remove("darken-3");
-					break;
-				default:
-
-			}
-		}
-	}
+	setCardLabel = {
+        toPlay: {
+            text: (cardIdx) => { document.getElementById(`${cardIdx}`).innerHTML = "stop"; },
+            color: (cardIdx) => { document.getElementById(`${cardIdx}_div`).classList.add("indigo"); }
+        },
+        toStop: {
+            text: (cardIdx) => { document.getElementById(`${cardIdx}`).innerHTML = "play"; },
+            color: (cardIdx) => { document.getElementById(`${cardIdx}_div`).classList.remove("indigo"); }
+        },
+        toQueueOn: {
+            text: (cardIdx, text = 'enqueue') => { document.getElementById(`${cardIdx}`).innerHTML = text; },
+            color: (cardIdx) => { document.getElementById(`${cardIdx}_div`).classList.add("grey"); document.getElementById(`${cardIdx}_div`).classList.add("darken-3"); }
+        },
+        toQueueOff: {
+            text: (cardIdx) => { document.getElementById(`${cardIdx}`).innerHTML = 'play'; },
+            color: (cardIdx) => { document.getElementById(`${cardIdx}_div`).classList.remove("grey"); document.getElementById(`${cardIdx}_div`).classList.remove("darken-3"); }
+        }
+    }
 
 	constructor()
 	{
@@ -41,8 +33,8 @@ class Main extends Component
 		this.jsmediatags = require('jsmediatags');
 
 		this.arrAudioCard = [];
-		this.arrDurations = [];
 		this.idxAudioCard = 0;
+		this.idxDurationPair = new Map();
 
 		this.timeoutID = "";
 		this.audio = null;
@@ -53,8 +45,9 @@ class Main extends Component
 		};
 
 		this.arrFiles = [];
-		this.queueSheet = [];
+		this.metadatas = [];
 
+		this.queueSheet = [];
 		this.isQueuingMode = false;
 		this.isShuffleMode = false;
 		this.isRepeatMode = false;
@@ -63,32 +56,62 @@ class Main extends Component
 			isDone: false,
 			isPlaying: false,
 			isSampleBeeningLoad: false,
-			label: {
-
-			}
 		};
 	}
 
-	queueSheetEmpty = () => {
+	isQueueSheetEmpty = () => {
 		return this.queueSheet.length === 0;
 	}
 
 	isNextOutOfIdx = () => {
-		return this.CUE.NEXT > this.idxAudioCard;
+		return this.CUE.NEXT > this.arrAudioCard.length - 1;
+	}
+
+	isHome = () =>{
+		return window.location.href === rootDir.local;		
+	}
+
+	setLabelStateIdxOf = (state, index, idxQueue = 'enqueue') => {
+		if(this.isHome())
+		{
+			switch(state)
+			{
+				case 'play':
+					this.setCardLabel.toPlay.text(index);
+					this.setCardLabel.toPlay.color(index);
+					break;
+				case 'stop':
+					this.setCardLabel.toStop.text(index);
+					this.setCardLabel.toStop.color(index);
+					break;
+				case 'queue-on':
+					this.setCardLabel.toQueueOn.text(index, idxQueue);
+					this.setCardLabel.toQueueOn.color(index);
+					break;
+				case 'dequeue':
+					this.setCardLabel.toQueueOff.text(index);
+					break;
+				case 'queue-off':
+					this.setCardLabel.toQueueOff.text(index);
+					this.setCardLabel.toQueueOff.color(index);
+					break;
+				default:
+			}
+		}
 	}
 
 	queueNextAudio = (pausedAt = 0) => {
 		clearTimeout(this.timeoutID);
 
 		switch (true) {
-			case this.isShuffleMode === true:
+			case this.isShuffleMode:
 				this.CUE.NEXT = Math.floor(Math.random() * 1000) % this.arrAudioCard.length;
 				break;
-			case this.isRepeatMode === true:
+			case this.isRepeatMode:
 				this.CUE.NEXT = this.CUE.CUR;
 				break;
-			case (this.isQueuingMode === true) && (this.queueSheetEmpty === false):
-				this.CUE.NEXT = (this.queueSheet.shift());
+			case !this.isQueueSheetEmpty():
+				this.CUE.NEXT = this.queueSheet.shift();
 				break;
 			default :
 				this.CUE.NEXT = (this.CUE.CUR) + 1;
@@ -96,81 +119,93 @@ class Main extends Component
 		}
 
 		this.timeoutID = setTimeout( () => {
-			if (this.queueSheetEmpty === true && this.isNextOutOfIdx === true) {
-				this._stopAndChangeState();
+			if (this.isQueueSheetEmpty() && this.isNextOutOfIdx()) 
+			{
+				this.stop();
 			}
 			else
 			{
-				if (this.isQueuingMode === true)
+				if (this.isQueuingMode && this.isHome())
 				{
-					if (window.location.href === rootDir.local)
-					{
-						this.toggleQueuingMode();
-						this.handleEnqueue();
-						this.toggleQueuingMode();
-					}
-				}else {
+					this.toggleQueuingMode();
+					this.handlePlay();
+					this.toggleQueuingMode();
+				}
+				else 
+				{
 					this.handlePlay();
 				}
 			}
-		}, (this.arrAudioCard[this.CUE.CUR].duration - pausedAt) * 1000 );
+		}, (this.idxDurationPair.get(this.CUE.CUR) - pausedAt) * 1000 );
 	}
 
 	toggleQueuingMode = () => {
-		if (this.isQueuingMode === true)
+		if (this.isQueuingMode)
 		{
-			for (let index = 0; index < this.arrAudioCard.length; index++)
-			{
-				if (index === this.CUE.CUR)
-				{
-					continue;
-				}
-				this.setLabel('queue-off', index);
-			}
-			this.isQueuingMode = false;
+			this.updateQueueState('turnoff');
 		}
 		else
 		{
-			for (let index = 0; index < this.arrAudioCard.length; index++)
-			{
-				if (index === this.CUE.CUR)
-				{
-					continue;
-				}
+			this.updateQueueState('turnon');
+		}
+	}
 
-				if (this.queueSheet.includes(index) === true)
+	updateQueueState = (flag) => {
+		switch(flag)
+		{
+			case 'turnon':
+				for (let index = 0; index < this.arrAudioCard.length; index++)
 				{
-					this.setLabel('queue-on', index, this.queueSheet.indexOf(index) + 1);
+					if (index === this.CUE.CUR)
+					{
+						continue;
+					}
+					if (this.queueSheet.includes(index) === true)
+					{
+						this.setLabelStateIdxOf('queue-on', index, this.queueSheet.indexOf(index) + 1);
+					}
+					else
+					{
+						this.setLabelStateIdxOf('queue-on', index);
+					}
 				}
-				else
+				this.isQueuingMode = true;
+				break;
+			case 'turnoff':
+				for (let index = 0; index < this.arrAudioCard.length; index++)
 				{
-					this.setLabel('queue-on', index);
+					if (index === this.CUE.CUR)
+					{
+						continue;
+					}
+					this.setLabelStateIdxOf('queue-off', index);
 				}
-			}
-			this.isQueuingMode = true;
+				this.isQueuingMode = false;
+				break;
 		}
 	}
 
 	handlePlay = (isUserInput = false) => {
-		if (isUserInput === true && (this.CUE.NEXT === this.CUE.CUR))
+		if (isUserInput && (this.CUE.NEXT === this.CUE.CUR))
 		{
-			this._stopAndChangeState();
+			this.stop();
 			return;
 		}
 
-		if(this.isQueuingMode === true)
+		if(this.isQueuingMode)
 		{
-			if (this.queueSheet.includes(this.CUE.NEXT) === true)
+			let pos = this.queueSheet.indexOf(this.CUE.NEXT);
+			if (pos !== -1)
 			{
-				let pos = this.queueSheet.indexOf(this.CUE.NEXT);
-				this.setLabel('queue-off', pos);
-	
 				this.queueSheet.splice(pos, 1);
+				console.log('CUE SHEET:', this.queueSheet);
+				this.updateQueueState('turnon');
 				return;
 			}
 	
 			this.queueSheet.push(this.CUE.NEXT);
-			this.setLabel('queue-on', this.CUE.NEXT, this.queueSheet.length);
+			console.log('CUE SHEET:', this.queueSheet);
+			this.setLabelStateIdxOf('queue-on', this.CUE.NEXT, this.queueSheet.length);
 			return;
 		}
 
@@ -180,16 +215,12 @@ class Main extends Component
 			this.audio = new Audio(URL.createObjectURL(this.arrFiles[this.CUE.NEXT]));
 			this.audio.onloadedmetadata = () => {
 				console.log(this.audio.duration);
-				/*
-					this.idxDurationPair.set(this.CUR.CUR, this.audio.duration);
-				*/
-				this.queueNextAudio(this.audio.duration);
+				this.idxDurationPair.set(this.CUE.CUR, this.audio.duration);
+				this.queueNextAudio();
 			}
 			this.audio.play();
-
 			this.CUE.CUR = this.CUE.NEXT;
-
-			this.setLabel('play', this.CUE.CUR);
+			this.setLabelStateIdxOf('play', this.CUE.CUR);
 
 			this.pausedAt = 0;
 			this.setState({
@@ -198,15 +229,18 @@ class Main extends Component
 			return;
 		}
 
+		this.setLabelStateIdxOf('stop', this.CUE.CUR);
+
 		this.audio.pause();
-		this.audio.src = URL.createObjectURL(this.arrFiles[this.CUE.NEXT].file);
+		this.audio.src = URL.createObjectURL(this.arrFiles[this.CUE.NEXT]);
+		this.audio.onloadedmetadata = () => {
+			console.log(this.audio.duration);
+			this.idxDurationPair.set(this.CUE.CUR, this.audio.duration);
+			this.queueNextAudio();
+		}
 		this.audio.play();
-
-		this.setLabel('stop', this.CUE.CUR);
-		this.setLabel('play', this.CUE.NEXT);
-
 		this.CUE.CUR = this.CUE.NEXT;
-		this.queueNextAudio();
+		this.setLabelStateIdxOf('play', this.CUE.CUR);
 
 		this.pausedAt = 0;
 		this.setState({
@@ -214,11 +248,10 @@ class Main extends Component
 		});
 	}
 
-	_pauseAndChangeState = () => {
+	pause = () => {
 		if (this.state.isPlaying === true)
 		{
 			console.log("PAUSE");
-
 			clearTimeout(this.timeoutID);
 			this.pausedAt = this.audio.currentTime;
 			this.audio.pause();
@@ -233,8 +266,8 @@ class Main extends Component
 			{
 				console.log("PLAY");
 				this.audio.play();
-
 				this.queueNextAudio(this.pausedAt);
+
 				this.setState({
 					isPlaying: true
 				});
@@ -242,11 +275,11 @@ class Main extends Component
 		}
 	}
 
-	_stopAndChangeState = () => {
+	stop = () => {
 		console.log("STOP");
 		clearTimeout(this.timeoutID);
 
-		this.setLabel('stop', this.CUE.CUR);
+		this.setLabelStateIdxOf('stop', this.CUE.CUR);
 
 		this.audio.pause();
 		this.audio = null;
@@ -276,6 +309,7 @@ class Main extends Component
 			index: this.idxAudioCard
 		};
 
+		this.metadatas[this.idxAudioCard] = metadata;
 		this.arrFiles[this.idxAudioCard] = audio;
 
 		if (tag.tags.picture === undefined) 
@@ -329,7 +363,7 @@ class Main extends Component
 		});
 	}
 
-	handleFilelistThenAssignArrAudio = (fileList, clear) => { // 수정가능
+	handleFilelistThenAssignArrAudio = (fileList, clear) => {
 		if (clear === true)
 		{
 			if (this.arrAudioCard.length !== 0)
@@ -337,26 +371,26 @@ class Main extends Component
 				this.arrAudioCard = [];
 				if (this.audio !== null)
 				{
+					// if(this.state.isPlaying === true)
+					// {
+					// 	this.audio.pause();
+					// 	this.setLabelStateIdxOf('stop', this.CUE.CUR);
+					// 	this.setState({
+					// 		isPlaying: false,
+					// 	});
+					// }
 					this.audio = null;
 					this.pausedAt = 0;
-
-					// Main.alterLabel.setLabelStopped.text(this.CUE.CUR);
-					// Main.alterLabel.setLabelStopped.color(this.CUE.CUR);
 				}
 				this.CUE.CUR = "";
 				this.CUE.NEXT = "";
-
-				if (fileList.length === 0)
-				{
-					console.log('NO FILE SELECTED');
-					this.setState({
-						isPlaying: false,
-					});
-					return;
-				}
-			}   
+			}
 		}
-
+		if (fileList.length === 0)
+		{
+			console.log('NO FILE SELECTED');
+			return;
+		}   
 		this.fetchTagThenInitCard(fileList);
 	}
 
@@ -410,7 +444,7 @@ class Main extends Component
 	componentDidUpdate()
 	{
 		console.log("IS PLAYING?: " + this.state.isPlaying);
-		if (this.state.isPlaying === true) { console.log(`NOW PLAYING: ${this.CUE.CUR}, duration: ${this.arrAudioCard[this.CUE.CUR].duration - this.pausedAt}`); }
+		// if (this.state.isPlaying === true) { console.log(`NOW PLAYING: ${this.CUE.CUR}, duration: ${this.arrAudioCard[this.CUE.CUR].duration - this.pausedAt}`); }
 		console.log("CUE SHEET: ", this.queueSheet);
 		console.log("ARR AUDIO: ", this.arrAudioCard);
 		console.log("============================");
@@ -479,12 +513,12 @@ class Main extends Component
 
 				<div id="now_playing" className="col xl10 l10 m10 s10">
 					<a id="play_button" className="btn-floating btn-large waves-effect waves-light red">
-						<i className="large material-icons" onClick={ () => { this._pauseAndChangeState() }}>{ this.state.isPlaying === true ? "pause" : "play_arrow" }</i>
+						<i className="large material-icons" onClick={ () => { this.pause() }}>{ this.state.isPlaying === true ? "pause" : "play_arrow" }</i>
 					</a>
 					<div className="panel">
 						<div className="title_and_album">
-							<label className="album">{this.CUE.CUR === "" ? "- - -" : this.arrAudioCard[this.CUE.CUR].album}</label>
-							<label className="artist_title">{this.CUE.CUR === "" ? "- - -" : `${this.arrAudioCard[this.CUE.CUR].artist} - ${this.arrAudioCard[this.CUE.CUR].title}`}</label>
+							<label className="album">{this.CUE.CUR === "" ? "- - -" : this.metadatas[this.CUE.CUR].tag.album}</label>
+							<label className="artist_title">{this.CUE.CUR === "" ? "- - -" : `${this.metadatas[this.CUE.CUR].tag.artist} - ${this.metadatas[this.CUE.CUR].tag.title}`}</label>
 						</div>
 						
 						<div className="controller">
@@ -519,7 +553,7 @@ class Main extends Component
 										}}>{"repeat_one"}</i>
 								</div>
 								<div className="next waves-effect waves-green">
-									<i className="medium material-icons" onClick={ () => { if (this.CUE.CUR !== "") { this.queueNextAudio(this.arrAudioCard[this.CUE.CUR].duration); } }}>{"skip_next"}</i>
+									<i className="medium material-icons" onClick={ () => { if (this.CUE.CUR !== "") { this.queueNextAudio(this.idxDurationPair.get(this.CUE.CUR)); } }}>{"skip_next"}</i>
 								</div>
 
 							</div>
@@ -546,8 +580,6 @@ export default Main;
 /*
 	TODO:
 		vertical axis count by state
-		label by state
-		durations arr
 		display error
 		loading screen
 

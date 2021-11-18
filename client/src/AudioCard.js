@@ -6,7 +6,7 @@ function AudioCard(props)
     // let preloader = <div className="progress"><div className="indeterminate"></div></div>;
 
     return (
-        <div className="col xl2 l3 m6 s12">
+        <div className="col xl4">
             <div className="card hoverable small">
                 <Link to={ props.audioMetadata }>
                     <div className="card-image">
@@ -16,7 +16,7 @@ function AudioCard(props)
                         <p>{ props.audioMetadata.tag.title }</p>
                     </div>
                 </Link>
-                <div id={ `${props.audioMetadata.index}_selected` } className={"card-action " + (parseInt(props.CUE.CUR) === props.audioMetadata.index ? 'indigo' : '')}>
+                <div id={ `${props.audioMetadata.index}_div` } className={"card-action " + (parseInt(props.CUE.CUR) === props.audioMetadata.index ? 'indigo' : '')}>
                     <a id={ props.audioMetadata.index } href="#" onClick={ (event) => { event.preventDefault(); props.CUE.NEXT = parseInt(event.target.id); props._play(true); } }>{parseInt(props.CUE.CUR) === props.audioMetadata.index ? 'stop' : 'play'}</a>
                 </div>
             </div>
