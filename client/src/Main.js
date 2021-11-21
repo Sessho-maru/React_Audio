@@ -27,9 +27,9 @@ class Main extends Component
         }
     }
 
-	constructor()
+	constructor(props)
 	{
-		super();
+		super(props);
 		this.jsmediatags = require('jsmediatags');
 
 		this.arrAudioCard = [];
@@ -52,9 +52,11 @@ class Main extends Component
 		this.isShuffleMode = false;
 		this.isRepeatMode = false;
 
+		this.buttonLoadSample = <a className="waves-effect waves-light btn-large" onClick={ () => {this.loadSamples()} }><i className="material-icons right">cloud</i>Load Samples</a>;
 		this.state = {
 			isDone: false,
 			isPlaying: false,
+			gridColSize: 3,
 			isSampleBeeningLoad: false,
 		};
 	}
@@ -88,9 +90,6 @@ class Main extends Component
 					this.setCardLabel.toQueueOn.text(index, idxQueue);
 					this.setCardLabel.toQueueOn.color(index);
 					break;
-				case 'dequeue':
-					this.setCardLabel.toQueueOff.text(index);
-					break;
 				case 'queue-off':
 					this.setCardLabel.toQueueOff.text(index);
 					this.setCardLabel.toQueueOff.color(index);
@@ -110,9 +109,6 @@ class Main extends Component
 			case this.isRepeatMode:
 				this.CUE.NEXT = this.CUE.CUR;
 				break;
-			case !this.isQueueSheetEmpty():
-				this.CUE.NEXT = this.queueSheet.shift();
-				break;
 			default :
 				this.CUE.NEXT = (this.CUE.CUR) + 1;
 				break;
@@ -125,6 +121,11 @@ class Main extends Component
 			}
 			else
 			{
+				if(!this.isQueueSheetEmpty())
+				{
+					this.CUE.NEXT = this.queueSheet.shift();
+				}
+
 				if (this.isQueuingMode && this.isHome())
 				{
 					this.toggleQueuingMode();
@@ -185,6 +186,18 @@ class Main extends Component
 		}
 	}
 
+	playThenSetDurationLabel = () => {
+		this.audio.src = URL.createObjectURL(this.arrFiles[this.CUE.NEXT]);
+		this.audio.onloadedmetadata = () => {
+			this.idxDurationPair.set(this.CUE.CUR, this.audio.duration);
+			console.log("NOW PLAYING:", this.metadatas[this.CUE.CUR].tag, "DURATION:", this.audio.duration);
+			this.queueNextAudio();
+		}
+		this.audio.play();
+		this.CUE.CUR = this.CUE.NEXT;
+		this.setLabelStateIdxOf('play', this.CUE.CUR);
+	}
+
 	handlePlay = (isUserInput = false) => {
 		if (isUserInput && (this.CUE.NEXT === this.CUE.CUR))
 		{
@@ -212,15 +225,8 @@ class Main extends Component
 		console.log("PLAY");
 		if (this.CUE.CUR === "")
 		{
-			this.audio = new Audio(URL.createObjectURL(this.arrFiles[this.CUE.NEXT]));
-			this.audio.onloadedmetadata = () => {
-				console.log(this.audio.duration);
-				this.idxDurationPair.set(this.CUE.CUR, this.audio.duration);
-				this.queueNextAudio();
-			}
-			this.audio.play();
-			this.CUE.CUR = this.CUE.NEXT;
-			this.setLabelStateIdxOf('play', this.CUE.CUR);
+			this.audio = new Audio();
+			this.playThenSetDurationLabel();
 
 			this.pausedAt = 0;
 			this.setState({
@@ -232,15 +238,7 @@ class Main extends Component
 		this.setLabelStateIdxOf('stop', this.CUE.CUR);
 
 		this.audio.pause();
-		this.audio.src = URL.createObjectURL(this.arrFiles[this.CUE.NEXT]);
-		this.audio.onloadedmetadata = () => {
-			console.log(this.audio.duration);
-			this.idxDurationPair.set(this.CUE.CUR, this.audio.duration);
-			this.queueNextAudio();
-		}
-		this.audio.play();
-		this.CUE.CUR = this.CUE.NEXT;
-		this.setLabelStateIdxOf('play', this.CUE.CUR);
+		this.playThenSetDurationLabel();
 
 		this.pausedAt = 0;
 		this.setState({
@@ -325,7 +323,7 @@ class Main extends Component
 		}
 
 		this.arrAudioCard[this.idxAudioCard] =  <div key={this.idxAudioCard} className="container">
-													<AudioCard CUE={ this.CUE } audioMetadata={ metadata } _play={ this.handlePlay }/>
+													<AudioCard CUE={ this.CUE } _play={ this.handlePlay } audioMetadata={ metadata } gridColSize={ this.state.gridColSize }/>
 												</div>
 	}
 
@@ -369,16 +367,22 @@ class Main extends Component
 			if (this.arrAudioCard.length !== 0)
 			{
 				this.arrAudioCard = [];
+				this.idxAudioCard = 0;
+				this.idxDurationPair = new Map();
+
+				this.arrFiles = [];
+				this.metadatas = [];
+				this.queueSheet = [];
+
 				if (this.audio !== null)
 				{
-					// if(this.state.isPlaying === true)
-					// {
-					// 	this.audio.pause();
-					// 	this.setLabelStateIdxOf('stop', this.CUE.CUR);
-					// 	this.setState({
-					// 		isPlaying: false,
-					// 	});
-					// }
+					if(this.state.isPlaying === true)
+					{
+						this.audio.pause();
+						this.setState({
+							isPlaying: false,
+						});
+					}
 					this.audio = null;
 					this.pausedAt = 0;
 				}
@@ -410,10 +414,6 @@ class Main extends Component
 
 	loadSamples()
 	{
-		this.setState({
-			isSampleBeeningLoad: true
-		});
-
 		axios.get('/api/samples/get')
 			.then( (res) => {
 				console.log(res.data);
@@ -424,13 +424,42 @@ class Main extends Component
 				});
 
 				this.handleFilelistThenAssignArrAudio(samplesList, false);
+				this.buttonLoadSample = "";
 				this.setState({
-					isSampleBeeningLoad: -1
+					isSampleBeeningLoad: false
 				});
 			})  
 			.catch( (err) => {
 				console.log(err);
 			});
+		
+		this.buttonLoadSample = <div className="preloader-wrapper big active">
+									<div className="spinner-layer spinner-blue-only">
+									<div className="circle-clipper left">
+										<div className="circle"></div>
+									</div>
+									<div className="gap-patch">
+										<div className="circle"></div>
+									</div>
+									<div className="circle-clipper right">
+										<div className="circle"></div>
+									</div>
+									</div>
+								</div>
+		this.setState({
+			isSampleBeeningLoad: true
+		});								
+	}
+
+	changeGridColumnSize(colSize)
+	{
+		for(let i = 0; i < this.idxAudioCard; i++)
+		{
+			this.arrAudioCard[i] =  <div key={i} className="container">
+										<AudioCard CUE={ this.CUE } _play={ this.handlePlay } audioMetadata={ this.metadatas[i] } gridColSize={ colSize }/>
+									</div>
+		}
+		this.setState({ gridColSize: colSize });
 	}
 
 	componentDidMount()
@@ -443,8 +472,7 @@ class Main extends Component
 
 	componentDidUpdate()
 	{
-		console.log("IS PLAYING?: " + this.state.isPlaying);
-		// if (this.state.isPlaying === true) { console.log(`NOW PLAYING: ${this.CUE.CUR}, duration: ${this.arrAudioCard[this.CUE.CUR].duration - this.pausedAt}`); }
+		console.log("IS PLAYING: " + this.state.isPlaying);
 		console.log("CUE SHEET: ", this.queueSheet);
 		console.log("ARR AUDIO: ", this.arrAudioCard);
 		console.log("============================");
@@ -453,9 +481,6 @@ class Main extends Component
 		}else {
 			document.getElementById('queue_icon').classList.remove('queue_disabled');
 		}
-		// this.queueSheet.map( (each) => {
-		// 	console.assert(typeof(each) === 'number');
-		// });
 	}
 
 	componentWillUnmount()
@@ -466,47 +491,28 @@ class Main extends Component
 	render()
 	{
 		console.log("render() has ran");
-		let loadSampleButton = "";
-
-		switch (this.state.isSampleBeeningLoad) {
-			case false :
-				loadSampleButton = <a className="waves-effect waves-light btn-large" onClick={ () => {this.loadSamples()} }><i className="material-icons right">cloud</i>Load Samples</a>;
-				break;
-			case true :
-				loadSampleButton =  <div className="preloader-wrapper big active">
-										<div className="spinner-layer spinner-blue-only">
-										<div className="circle-clipper left">
-											<div className="circle"></div>
-										</div>
-										<div className="gap-patch">
-											<div className="circle"></div>
-										</div>
-										<div className="circle-clipper right">
-											<div className="circle"></div>
-										</div>
-										</div>
-									</div>
-				break;
-			default:
-				loadSampleButton = "";
-		}
 		
 		return (
 			<div className="row">
 				<div id="nav" className="col xl2 l2 m2 s2">
 					<div id="samplesButton">
-						{ loadSampleButton }
+						{ this.buttonLoadSample }
+					</div>
+					<div id="gridColSize">
+						<div className="setColSize" onClick={ () => { this.changeGridColumnSize(2) } }>6</div>
+						<div className="setColSize" onClick={ () => { this.changeGridColumnSize(3) } }>4</div>
+						<div className="setColSize" onClick={ () => { this.changeGridColumnSize(4) } }>3</div>
+						<div className="setColSize" onClick={ () => { this.changeGridColumnSize(6) } }>2</div>
 					</div>
 					<div className="fixed-action-btn">
-						<a className="btn-floating btn-small grey lighten-1"><i className="large material-icons">add</i></a>
+						<a className="btn-floating btn-small indigo lighten-2"><i className="large material-icons">add</i></a>
 						<ul>
 							<li>
-								<a onClick={ () => {this.openFileDialog(false)} } className="btn-floating blue"><i className="material-icons">queue</i></a>
+								<a onClick={ () => {this.openFileDialog(false)} } className="btn-floating blue"><div className="fileSelector">ADD</div></a>
 							</li>
 							<li>
-								<a onClick={ () => {this.openFileDialog(true)} } className="btn-floating green"><i className="material-icons">playlist_add</i></a>
+								<a onClick={ () => {this.openFileDialog(true)} } className="btn-floating green"><div className="fileSelector">NEW</div></a>
 							</li>
-							
 						</ul>
 					</div>
 				</div>

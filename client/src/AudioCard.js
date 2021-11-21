@@ -3,11 +3,12 @@ import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
 
 function AudioCard(props)
 {
-    // let preloader = <div className="progress"><div className="indeterminate"></div></div>;
+    let small = '';
+    if (props.gridColSize === 2) { small = 'small'; }
 
     return (
-        <div className="col xl4">
-            <div className="card hoverable small">
+        <div className={ `col xl${ props.gridColSize }` }>
+            <div className={ `card hoverable ${small}` }>
                 <Link to={ props.audioMetadata }>
                     <div className="card-image">
                         <img src={ props.audioMetadata.albumArtUrl } />
