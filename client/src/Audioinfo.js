@@ -3,45 +3,32 @@ import TagInfo from './TagInfo';
 import YTInfo from './YTInfo';
 
 const axios = require('axios');
-let receivedParam = {};
 
 class AudioInfo extends Component
 {
-    constructor()
+    constructor(props)
     {
-        super();
-        this.YTInfos = [];
+        super(props);
+        this.YTMetas = [];
         this.preloader = "";
         this.timeoutId = "";
-
+        this.tag = props.location.tag;
+        
+        this.isFetchable = (this.tag.title !== 'untitled') && (this.tag.artist !== "") ? true : false;
         this.state = { 
-            isntFetchable: false, 
             isLoaded: false 
         };
     }
 
-    UNSAFE_componentWillMount()
-    {
-        if (this.props.location.audioInfo !== undefined)
-        {
-            receivedParam = this.props.location;
-        }
-        // console.log(receivedParam);
-    }
-
     componentDidMount()
     {
-        if (receivedParam.audioInfo.title === 'untitled' || receivedParam.audioInfo.artist === "")
+        if (this.isFetchable === false)
         {
-            this.preloader = <div id="preloader">
-                                <h2>To fecth Youtube Search page, Title and Artistname is required</h2>
-                             </div>
-            this.setState({ isntFetchable: true });
             return;
         }
 
-        console.log(`search term: ${receivedParam.audioInfo.artist} - ${receivedParam.audioInfo.title}`);
-        const dist = `https://www.youtube.com/results?search_query=${receivedParam.audioInfo.artist} - ${receivedParam.audioInfo.title}`;
+        console.log(`search for: ${this.tag.artist} - ${this.tag.title}`);
+        const dist = `https://www.youtube.com/results?search_query=${this.tag.artist} - ${this.tag.title}`;
 
         axios.get(`/api/url?search=${dist}`)
             .then( (res) => {
@@ -63,8 +50,8 @@ class AudioInfo extends Component
                     console.log(res.data);
                     let received = res.data.result;
 
-                    this.YTInfos = received.map( (each, i) => {
-                        let youtubeInfo = {
+                    this.YTMetas = received.map( (each, i) => {
+                        let ytMeta = {
                             videoId: each.videoId,
                             thumbnailUrl: each.thumbnailUrl,
                             title: each.title,
@@ -73,7 +60,7 @@ class AudioInfo extends Component
                         };
 
                         return (
-                            <YTInfo key={i} YTInfoObj={youtubeInfo} />
+                            <YTInfo key={i} ytMeta={ytMeta} />
                         );
                     });
                     this.setState({ isLoaded: true });
@@ -89,7 +76,7 @@ class AudioInfo extends Component
 
     render()
     {
-        if (this.state.isntFetchable === false)
+        if (this.isFetchable === true)
         {
             this.preloader = <div id="preloader">
                                 <div className="preloader-wrapper big active">
@@ -106,17 +93,23 @@ class AudioInfo extends Component
                                     </div>
                                 </div>
                              </div>
-        }        
+        }
+        else
+        {
+            this.preloader = <div id="preloader">
+                                <h2>To fecth Youtube Search page, Title and Artistname is required</h2>
+                            </div>
+        }
 
         return (
             <div className="row">
                 <div className="container">
                     <div className="col xl7 l5 m3 s1">
-                        <TagInfo albumArt={ receivedParam.albumArtUrl }/>
+                        <TagInfo albumArt={ this.props.location.albumArtUrl }/>
                     </div>
                     <div className="col xl5 l7 m9 s11">
                         <div id="YTcontent">
-                            { this.state.isLoaded === false ? this.preloader : this.YTInfos }
+                            { this.state.isLoaded === false ? this.preloader : this.YTMetas }
                         </div>
                     </div>
                 </div>

@@ -149,6 +149,26 @@ code {
   background-color:#e8eaf6;
 }
 
+.App #gridColSize{
+  display: flex;
+  justify-content: space-evenly;
+  margin-top: 14%;
+}
+
+.App .setColSize{
+  display:inline-block;
+  border:1px solid #CCC;
+  border-radius: 15px;
+  background: rgba(95,117,241,0.4);
+  color: rgba(235,233,223);
+  font-family:Verdana, Geneva, Tahoma, sans-serif;
+  font-size: 18px;
+  box-shadow: 0 0 5px -1px rgba(0,0,0,0.2);
+  cursor: pointer;
+  padding: 14px;
+  text-align: center;
+}
+
 .App .queue_disabled {
   color: rgb(204, 204, 204);
   pointer-events: none;
@@ -163,4 +183,13 @@ code {
 }
 .App .btn-floating.btn-small i {
   font-size: 2vw;
+}
+
+.App .card-label {
+  font-size: 15px;
+}
+
+.App .fileSelector {
+  margin-top: 4px;
+  font-family:Verdana, Geneva, Tahoma, sans-serif;
 }

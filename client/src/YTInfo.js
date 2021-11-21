@@ -1,10 +1,10 @@
 import React from 'react';
-import DisplayItem from './DispayItem';
+import YTList from './YTList';
 
 function YTInfo(props)
 {
     return (
-        <DisplayItem YTInfoObj={props.YTInfoObj}/>
+        <YTList ytMeta={props.ytMeta}/>
     );
 }
 

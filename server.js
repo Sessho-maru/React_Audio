@@ -5,7 +5,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 app.use(cors());
 
-const port = 1234;
+const port = 5000;
 let ytInfos = [];
 let ytSearch = "";
 
@@ -93,11 +93,11 @@ function hitYoutube(ytSearch)
 }
 
 app.get('/api/url', (req, res) => {
-    console.log(`serchTerm: ${req.query.search}`);
+    console.log(`serch for: ${req.query.search}`);
     ytInfos = [];
 
-    hitYoutube(ytSearch = req.query.search);
-    res.status(200).send({msg: 'processing...'});
+    hitYoutube(req.query.search);
+    res.status(200).send({msg: 'fetching...'});
 });
 
 app.get('/api/get', (req, res) => {

@@ -4,612 +4,591 @@ import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
 import AudioCard from './AudioCard';
 import AudioInfo from './Audioinfo';
 
-let tagArray = [];
-let numProcessedItem = 0;
-let numDurationsReceived = 0;
-
 const rootDir = {local: 'http://localhost:3000/', server: '???'};
 
 class Main extends Component
 {
-    static alterLabel = {
-        setPlayingStatus: {
-            text: (dist) => { if (window.location.href === rootDir.local) document.getElementById(`${dist}`).innerHTML = "stop"; },
-            color: (dist) => { if (window.location.href === rootDir.local) document.getElementById(`${dist}_selected`).classList.add("indigo"); }
+	setCardLabel = {
+        toPlay: {
+            text: (cardIdx) => { document.getElementById(`${cardIdx}`).innerHTML = "stop"; },
+            color: (cardIdx) => { document.getElementById(`${cardIdx}_div`).classList.add("indigo"); }
         },
-        setStopStatus: {
-            text: (dist) => { if (window.location.href === rootDir.local) document.getElementById(`${dist}`).innerHTML = "play"; },
-            color: (dist) => { if (window.location.href === rootDir.local) document.getElementById(`${dist}_selected`).classList.remove("indigo"); }
+        toStop: {
+            text: (cardIdx) => { document.getElementById(`${cardIdx}`).innerHTML = "play"; },
+            color: (cardIdx) => { document.getElementById(`${cardIdx}_div`).classList.remove("indigo"); }
         },
-        setQueuedStatus: {
-            text: (dist, currentlySelected = 'enqueue') => { if (window.location.href === rootDir.local) document.getElementById(`${dist}`).innerHTML = currentlySelected; },
-            color: (dist) => { if (window.location.href === rootDir.local) {document.getElementById(`${dist}_selected`).classList.add("grey"); document.getElementById(`${dist}_selected`).classList.add("darken-3");} }
+        toQueueOn: {
+            text: (cardIdx, text = 'enqueue') => { document.getElementById(`${cardIdx}`).innerHTML = text; },
+            color: (cardIdx) => { document.getElementById(`${cardIdx}_div`).classList.add("grey"); document.getElementById(`${cardIdx}_div`).classList.add("darken-3"); }
         },
-        turningOffQueueState: {
-            text: (dist) => { if (window.location.href === rootDir.local) document.getElementById(`${dist}`).innerHTML = 'play'; },
-            color: (dist) => { if (window.location.href === rootDir.local) {document.getElementById(`${dist}_selected`).classList.remove("grey"); document.getElementById(`${dist}_selected`).classList.remove("darken-3");} }
+        toQueueOff: {
+            text: (cardIdx) => { document.getElementById(`${cardIdx}`).innerHTML = 'play'; },
+            color: (cardIdx) => { document.getElementById(`${cardIdx}_div`).classList.remove("grey"); document.getElementById(`${cardIdx}_div`).classList.remove("darken-3"); }
         }
     }
 
-    constructor()
-    {
-        super();
-        this.jsmediatags = require('jsmediatags');
+	constructor(props)
+	{
+		super(props);
+		this.jsmediatags = require('jsmediatags');
 
-        this.audioCards = [];
-        this.timeoutId = "";
-        this.audio = null;
-        this.pausedAt = 0;
-        this.CUE = {
-            CUR: "",
-            NEXT: ""
-        };
+		this.arrAudioCard = [];
+		this.idxAudioCard = 0;
+		this.idxDurationPair = new Map();
 
-        this.queSheet = [];
-        
-        this.isQueuingMode = false;
-        this.isShuffleMode = false;
-        this.isRepeatMode = false;
+		this.timeoutID = "";
+		this.audio = null;
+		this.pausedAt = 0;
+		this.CUE = {
+			CUR: "",
+			NEXT: ""
+		};
 
-        this.isSampleBeeningLoad = false;
+		this.arrFiles = [];
+		this.metadatas = [];
 
-        this.state = {
-            isNeedToReRender: false,
-            isPlaying: false,
-        };
-    }
+		this.queueSheet = [];
+		this.isQueuingMode = false;
+		this.isShuffleMode = false;
+		this.isRepeatMode = false;
 
-    queueNextAudio = (pausedAt = 0) => {
-        clearTimeout(this.timeoutId);
+		this.buttonLoadSample = <a className="waves-effect waves-light btn-large" onClick={ () => {this.loadSamples()} }><i className="material-icons right">cloud</i>Load Samples</a>;
+		this.state = {
+			isDone: false,
+			isPlaying: false,
+			gridColSize: 3,
+			isSampleBeeningLoad: false,
+		};
+	}
 
-        switch (true) {
-            case this.isShuffleMode === true :
-                this.CUE.NEXT = Math.floor(Math.random() * 1000) % numDurationsReceived;
-                break;
-            case this.isRepeatMode === true :
-                this.CUE.NEXT = this.CUE.CUR;
-                break;
-            default :
-                this.CUE.NEXT = (this.CUE.CUR) + 1;
-                break;
-        }
+	isQueueSheetEmpty = () => {
+		return this.queueSheet.length === 0;
+	}
 
-        this.timeoutId = setTimeout( () => {
-            const isQueueEmpty = this.queSheet.length === 0;
-            const isNextEndOfTagArray = this.CUE.NEXT === tagArray.length;
-            
-            if (isQueueEmpty && isNextEndOfTagArray) {
-                this._stopAndChangeState();
-            }
-            else
-            {
-                if (this.queSheet.length > 0)
-                {
-                    this.CUE.NEXT = (this.queSheet.shift());
-                }
+	isNextOutOfIdx = () => {
+		return this.CUE.NEXT > this.arrAudioCard.length - 1;
+	}
 
-                if (this.isQueuingMode === true)
-                {
-                    if (window.location.href === rootDir.local)
-                    {
-                        this.toggleQueuingMode();
-                        this._playAndChangeState();
-                        this.toggleQueuingMode();
-                    }
-                }else {
-                    this._playAndChangeState();
-                }
-            }
-        }, (tagArray[this.CUE.CUR].duration - pausedAt) * 1000 );
-    }
+	isHome = () =>{
+		return window.location.href === rootDir.local;		
+	}
 
-    toggleQueuingMode = () => {
-        if (this.isQueuingMode === true)
-        {
-            for (let index = 0; index < numDurationsReceived; index++)
-            {
-                if (index === this.CUE.CUR)
-                {
-                    continue;
-                }
-                Main.alterLabel.turningOffQueueState.text(index);
-                Main.alterLabel.turningOffQueueState.color(index);
-                
-            }
-            this.isQueuingMode = false;
-        }
-        else
-        {
-            for (let i = 0; i < numDurationsReceived; i++)
-            {
-                if (i === this.CUE.CUR)
-                {
-                    continue;
-                }
-                Main.alterLabel.setQueuedStatus.color(i);
-            }
-            this.updateQueuedNumber();
-            this.isQueuingMode = true;
-        }
+	setLabelStateIdxOf = (state, index, idxQueue = 'enqueue') => {
+		if(this.isHome())
+		{
+			switch(state)
+			{
+				case 'play':
+					this.setCardLabel.toPlay.text(index);
+					this.setCardLabel.toPlay.color(index);
+					break;
+				case 'stop':
+					this.setCardLabel.toStop.text(index);
+					this.setCardLabel.toStop.color(index);
+					break;
+				case 'queue-on':
+					this.setCardLabel.toQueueOn.text(index, idxQueue);
+					this.setCardLabel.toQueueOn.color(index);
+					break;
+				case 'queue-off':
+					this.setCardLabel.toQueueOff.text(index);
+					this.setCardLabel.toQueueOff.color(index);
+					break;
+				default:
+			}
+		}
+	}
 
-        this.setState({
-            isNeedtoReRender: true
-        });
-    }
+	queueNextAudio = (pausedAt = 0) => {
+		clearTimeout(this.timeoutID);
 
-    updateQueuedNumber = () => {
-        for (let index = 0; index < numDurationsReceived; index++)
-        {
-            if (index === this.CUE.CUR)
-            {
-                continue;
-            }
+		switch (true) {
+			case this.isShuffleMode:
+				this.CUE.NEXT = Math.floor(Math.random() * 1000) % this.arrAudioCard.length;
+				break;
+			case this.isRepeatMode:
+				this.CUE.NEXT = this.CUE.CUR;
+				break;
+			default :
+				this.CUE.NEXT = (this.CUE.CUR) + 1;
+				break;
+		}
 
-            if (this.queSheet.includes(index) === true)
-            {
-                Main.alterLabel.setQueuedStatus.text(index, this.queSheet.indexOf(index) + 1);
-            }
-            else
-            {
-                Main.alterLabel.setQueuedStatus.text(index);
-            }
-        }
-    }
+		this.timeoutID = setTimeout( () => {
+			if (this.isQueueSheetEmpty() && this.isNextOutOfIdx()) 
+			{
+				this.stop();
+			}
+			else
+			{
+				if(!this.isQueueSheetEmpty())
+				{
+					this.CUE.NEXT = this.queueSheet.shift();
+				}
 
-    _pauseAndChangeState = () => {
-        if (this.state.isPlaying === true)
-        {
-            console.log("PAUSE");
+				if (this.isQueuingMode && this.isHome())
+				{
+					this.toggleQueuingMode();
+					this.handlePlay();
+					this.toggleQueuingMode();
+				}
+				else 
+				{
+					this.handlePlay();
+				}
+			}
+		}, (this.idxDurationPair.get(this.CUE.CUR) - pausedAt) * 1000 );
+	}
 
-            clearTimeout(this.timeoutId);
-            this.pausedAt = this.audio.currentTime;
-            this.audio.pause();
+	toggleQueuingMode = () => {
+		if (this.isQueuingMode)
+		{
+			this.updateQueueState('turnoff');
+		}
+		else
+		{
+			this.updateQueueState('turnon');
+		}
+	}
 
-            this.setState({
-                isPlaying: false
-            });
-        }
-        else
-        {
-            if (this.audio !== null)
-            {
-                console.log("PLAY");
-                this.audio.play();
+	updateQueueState = (flag) => {
+		switch(flag)
+		{
+			case 'turnon':
+				for (let index = 0; index < this.arrAudioCard.length; index++)
+				{
+					if (index === this.CUE.CUR)
+					{
+						continue;
+					}
+					if (this.queueSheet.includes(index) === true)
+					{
+						this.setLabelStateIdxOf('queue-on', index, this.queueSheet.indexOf(index) + 1);
+					}
+					else
+					{
+						this.setLabelStateIdxOf('queue-on', index);
+					}
+				}
+				this.isQueuingMode = true;
+				break;
+			case 'turnoff':
+				for (let index = 0; index < this.arrAudioCard.length; index++)
+				{
+					if (index === this.CUE.CUR)
+					{
+						continue;
+					}
+					this.setLabelStateIdxOf('queue-off', index);
+				}
+				this.isQueuingMode = false;
+				break;
+		}
+	}
 
-                this.queueNextAudio(this.pausedAt);
-                this.setState({
-                    isPlaying: true
-                });
-            }
-        }
-    }
+	playThenSetDurationLabel = () => {
+		this.audio.src = URL.createObjectURL(this.arrFiles[this.CUE.NEXT]);
+		this.audio.onloadedmetadata = () => {
+			this.idxDurationPair.set(this.CUE.CUR, this.audio.duration);
+			console.log("NOW PLAYING:", this.metadatas[this.CUE.CUR].tag, "DURATION:", this.audio.duration);
+			this.queueNextAudio();
+		}
+		this.audio.play();
+		this.CUE.CUR = this.CUE.NEXT;
+		this.setLabelStateIdxOf('play', this.CUE.CUR);
+	}
 
-    _stopAndChangeState = () => {
-        console.log("STOP");
-        clearTimeout(this.timeoutId);
+	handlePlay = (isUserInput = false) => {
+		if (isUserInput && (this.CUE.NEXT === this.CUE.CUR))
+		{
+			this.stop();
+			return;
+		}
 
-        Main.alterLabel.setStopStatus.text(this.CUE.CUR);
-        Main.alterLabel.setStopStatus.color(this.CUE.CUR);
+		if(this.isQueuingMode)
+		{
+			let pos = this.queueSheet.indexOf(this.CUE.NEXT);
+			if (pos !== -1)
+			{
+				this.queueSheet.splice(pos, 1);
+				console.log('CUE SHEET:', this.queueSheet);
+				this.updateQueueState('turnon');
+				return;
+			}
+	
+			this.queueSheet.push(this.CUE.NEXT);
+			console.log('CUE SHEET:', this.queueSheet);
+			this.setLabelStateIdxOf('queue-on', this.CUE.NEXT, this.queueSheet.length);
+			return;
+		}
 
-        this.audio.pause();
-        this.audio = null;
-        
-        this.CUE.CUR = "";
-        this.CUE.NEXT = "";
-        this.pausedAt = 0;
+		console.log("PLAY");
+		if (this.CUE.CUR === "")
+		{
+			this.audio = new Audio();
+			this.playThenSetDurationLabel();
 
-        this.setState({
-            isPlaying: false
-        });
+			this.pausedAt = 0;
+			this.setState({
+				isPlaying: true
+			});
+			return;
+		}
 
-    }
+		this.setLabelStateIdxOf('stop', this.CUE.CUR);
 
-    _playAndChangeState = (isUserInput = false) => {
-        if (isUserInput === true && (this.CUE.NEXT === this.CUE.CUR))
-        {
-            this._stopAndChangeState();
-            return;
-        }
+		this.audio.pause();
+		this.playThenSetDurationLabel();
 
-        if (this.isQueuingMode === true) // Add AUDIO into quesheet
-        {
-            if (this.queSheet.includes(this.CUE.NEXT) === true)
-            {
-                let pos = this.queSheet.indexOf(this.CUE.NEXT);
-                this.queSheet.splice(pos, 1);
-                
-                this.updateQueuedNumber();
-                this.setState({
-                    isNeedtoReRender: true
-                });
-                return;
-            }
+		this.pausedAt = 0;
+		this.setState({
+			isPlaying: true
+		});
+	}
 
-            this.queSheet.push(this.CUE.NEXT);
-            Main.alterLabel.setQueuedStatus.text(this.CUE.NEXT, this.queSheet.length);
-            this.setState({
-                isNeedtoReRender: true
-            });
-            return;
-        }
+	pause = () => {
+		if (this.state.isPlaying === true)
+		{
+			console.log("PAUSE");
+			clearTimeout(this.timeoutID);
+			this.pausedAt = this.audio.currentTime;
+			this.audio.pause();
 
-        console.log("PLAY");
-        if (this.CUE.CUR === "") // Initialize AUDIO object for the first time or when stopped
-        {
-            this.audio = new Audio(URL.createObjectURL(tagArray[this.CUE.NEXT].file));
-            this.audio.play();
+			this.setState({
+				isPlaying: false
+			});
+		}
+		else
+		{
+			if (this.audio !== null)
+			{
+				console.log("PLAY");
+				this.audio.play();
+				this.queueNextAudio(this.pausedAt);
 
-            this.CUE.CUR = this.CUE.NEXT;
-            this.queueNextAudio();
+				this.setState({
+					isPlaying: true
+				});
+			}
+		}
+	}
 
-            Main.alterLabel.setPlayingStatus.text(this.CUE.CUR);
-            Main.alterLabel.setPlayingStatus.color(this.CUE.CUR);
+	stop = () => {
+		console.log("STOP");
+		clearTimeout(this.timeoutID);
 
-            this.pausedAt = 0;
-            this.setState({
-                isPlaying: true
-            });
-            return;
-        }
+		this.setLabelStateIdxOf('stop', this.CUE.CUR);
 
-        this.audio.pause();
-        this.audio.src = URL.createObjectURL(tagArray[this.CUE.NEXT].file);
-        this.audio.play();
+		this.audio.pause();
+		this.audio = null;
+		
+		this.CUE.CUR = "";
+		this.CUE.NEXT = "";
+		this.pausedAt = 0;
 
-        Main.alterLabel.setStopStatus.text(this.CUE.CUR);
-        Main.alterLabel.setStopStatus.color(this.CUE.CUR);
-        Main.alterLabel.setPlayingStatus.text(this.CUE.NEXT);
-        Main.alterLabel.setPlayingStatus.color(this.CUE.NEXT);
+		this.setState({
+			isPlaying: false
+		});
 
-        this.CUE.CUR = this.CUE.NEXT;
-        this.queueNextAudio();
+	}
 
-        this.pausedAt = 0;
-        this.setState({
-            isPlaying: true
-        });
-    }
+	initAudioCard = (tag, audio) => {
+		let metadata = {
+			pathname: `/${this.idxAudioCard}`,
+			tag: {
+				title: tag.tags.title,
+				artist: tag.tags.artist,
+				album: tag.tags.album,
+				genre: tag.tags.genre,
+				year: tag.tags.year,
+				track: tag.tags.track,
+			},
+			albumArtUrl: "",
+			index: this.idxAudioCard
+		};
 
-    openFileDialog = (clearTagArray) => {
-        if (clearTagArray === true)
-        {
-            let newFileDialog = document.getElementById('new');
-            newFileDialog.click();
-        }
+		this.metadatas[this.idxAudioCard] = metadata;
+		this.arrFiles[this.idxAudioCard] = audio;
 
-        if (clearTagArray === false)
-        {
-            let appendFileDialog = document.getElementById('append');
-            appendFileDialog.click();
-        }
-    }
-    
-    insertTagInfoAndChangeState = (fileList, initializing) => { // 수정가능
-        if (initializing === true)
-        {
-            if (numProcessedItem > 0)
-            {
-                tagArray = [];
-                this.audioCards = [];
+		if (tag.tags.picture === undefined) 
+		{
+			metadata.albumArtUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/1200px-No_image_available.svg.png";
+		}
+		else
+		{
+			const { data, type } = tag.tags.picture;
+			const byteArray = new Uint8Array(data);
+			const blob = new Blob([byteArray], { type });
+			metadata.albumArtUrl = URL.createObjectURL(blob);
+		}
 
-                if (this.state.isPlaying === true || this.pausedAt !== 0)
-                {
-                    this.audio.pause();
-                    this.audio = null;
-                    this.pausedAt = 0;
+		this.arrAudioCard[this.idxAudioCard] =  <div key={this.idxAudioCard} className="container">
+													<AudioCard CUE={ this.CUE } _play={ this.handlePlay } audioMetadata={ metadata } gridColSize={ this.state.gridColSize }/>
+												</div>
+	}
 
-                    Main.alterLabel.setStopStatus.text(this.CUE.CUR);
-                    Main.alterLabel.setStopStatus.color(this.CUE.CUR);
-                }
+	fetchTagThenInitCard = (filelist) => {
+		let checker = (tag, fileName) => { // TODO: delete alert() calls
+			if (tag === undefined) { alert(`No any given Tag data!\n:${fileName}`); return; }
+			if (tag.tags.title === undefined) { alert(`No given {Title}!\n:${fileName}\nto fetch Youtube search result, {Title} and {Artist} is required`); tag.tags.title = "untitled"; }
+			if (tag.tags.artist === undefined) { alert(`No given {Artistname}!\n:${fileName}\nto fetch Youtube search result, {Title} and {Artistname} is required`); tag.tags.artist = ""; }
+			if (tag.tags.picture === undefined) { alert(`No given Albumart data!\n:${fileName}`); }
+		}
 
-                numProcessedItem = 0;
-                numDurationsReceived = 0;
-                this.CUE.CUR = "";
-                this.CUE.NEXT = "";
+		let counter = [...filelist].length;
+		[...filelist].forEach((each) => {
+			this.jsmediatags.read(each, {
+				onSuccess: (tag) => {
+					checker(tag, each.name);
 
-                if (fileList.length === 0)
-                {
-                    this.setState({
-                        isPlaying: false,
-                        isNeedtoReRender: true
-                    });
-                    return;
-                }
-            }   
-        }
+					this.initAudioCard(tag, each);
+					this.idxAudioCard++
+					counter--;
 
-        let checker = (tag, fileName) => {
-            if (tag === undefined) { alert(`No any given Tag data!\n:${fileName}`); return; }
-            if (tag.tags.title === undefined) { alert(`No given {Title}!\n:${fileName}\nto fetch Youtube search result, {Title} and {Artist} is required`); tag.tags.title = "untitled"; }
-            if (tag.tags.artist === undefined) { alert(`No given {Artistname}!\n:${fileName}\nto fetch Youtube search result, {Title} and {Artistname} is required`); tag.tags.artist = ""; }
-            if (tag.tags.picture === undefined) { alert(`No given Albumart data!\n:${fileName}`); }
-        }
+					if(counter === 0)
+					{
+						this.setState({
+							isDone: true
+						});
+					}
+				},
+				onError: (error) => {
+					console.log("jsmediaTags.read() has been run, but failed" + error);
+					counter--;
+					// checker(undefined, null);
+				}    
+			});
+		});
+	}
 
-        let getDuration = (file, index) => {
-            let fr = new FileReader();
-            fr.readAsArrayBuffer(file);
-            fr.onload = (readEvent) => {
-                var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                audioContext.decodeAudioData(readEvent.target.result, (buffer) => {
-                    
-                    tagArray[index].duration = buffer.duration;
-                    console.log(`duration: ${buffer.duration} of ${index} is inserted`);
+	handleFilelistThenAssignArrAudio = (fileList, clear) => {
+		if (clear === true)
+		{
+			if (this.arrAudioCard.length !== 0)
+			{
+				this.arrAudioCard = [];
+				this.idxAudioCard = 0;
+				this.idxDurationPair = new Map();
 
-                    this.audioCards[index] =    <div key={index} className="container">
-                                                    { React.cloneElement(this.audioCards[index].props.children, { isDone: true }) }
-                                                </div>
-                    numDurationsReceived = numDurationsReceived + 1;
-                    if (numDurationsReceived === tagArray.length)
-                    {
-                        console.log("processing was completed");
-                        this.setState({
-                            isNeedToReRender: true
-                        });
-                    }
-                });
-            };
-        }
+				this.arrFiles = [];
+				this.metadatas = [];
+				this.queueSheet = [];
 
-        let triggerRerender = (numAdded) => {
-            this.reRenderAudioCards(numAdded);
-            if (initializing === true)
-            {   
-                this.setState({
-                    isPlaying: false,
-                    isNeedtoReRender: true
-                });
-            }
-            else
-            {
-                this.setState({
-                    isNeedtoReRender: true
-                });
-            }
-        }
+				if (this.audio !== null)
+				{
+					if(this.state.isPlaying === true)
+					{
+						this.audio.pause();
+						this.setState({
+							isPlaying: false,
+						});
+					}
+					this.audio = null;
+					this.pausedAt = 0;
+				}
+				this.CUE.CUR = "";
+				this.CUE.NEXT = "";
+			}
+		}
+		if (fileList.length === 0)
+		{
+			console.log('NO FILE SELECTED');
+			return;
+		}   
+		this.fetchTagThenInitCard(fileList);
+	}
 
-        let numAdded = fileList.length;
-        tagArray.length = numProcessedItem + numAdded;
+	openFileDialog = (clear) => {
+		switch(clear)
+		{
+			case true: 
+				document.getElementById('new').click();
+				break;
+			case false:
+				document.getElementById('append').click();
+				break;
+			default:
+				break;
+		}
+	}
 
-        Array.from(fileList).map( (each) => {
-            console.log("insertTagInfo->map() has ran");
+	loadSamples()
+	{
+		axios.get('/api/samples/get')
+			.then( (res) => {
+				console.log(res.data);
 
-            this.jsmediatags.read(each, {
+				let buffers = res.data.body;
+				let samplesList = buffers.map( (each, i) => {
+					return new File([new Uint8Array(each.data)], 'sample_'+i+'.mp3', { type: 'audio/mpeg' });
+				});
 
-                onSuccess: function(tag) {
-                    console.log("jsmediaTags.read() has been run");
-                    
-                    checker(tag, each.name);
-                    tag.tags.file = each;
-                    tagArray[numProcessedItem] = tag.tags;
-                    getDuration(each, numProcessedItem);
+				this.handleFilelistThenAssignArrAudio(samplesList, false);
+				this.buttonLoadSample = "";
+				this.setState({
+					isSampleBeeningLoad: false
+				});
+			})  
+			.catch( (err) => {
+				console.log(err);
+			});
+		
+		this.buttonLoadSample = <div className="preloader-wrapper big active">
+									<div className="spinner-layer spinner-blue-only">
+									<div className="circle-clipper left">
+										<div className="circle"></div>
+									</div>
+									<div className="gap-patch">
+										<div className="circle"></div>
+									</div>
+									<div className="circle-clipper right">
+										<div className="circle"></div>
+									</div>
+									</div>
+								</div>
+		this.setState({
+			isSampleBeeningLoad: true
+		});								
+	}
 
-                    numProcessedItem = numProcessedItem + 1;
-                    if (numProcessedItem === tagArray.length) { triggerRerender(numAdded); }
-                },
-                onError: function(error) {
-                    console.log("jsmediaTags.read() has been run, but failed");
-                    checker(undefined, null);
-                    numProcessedItem = numProcessedItem + 1;
-                }
-            });
-        });
-    }
+	changeGridColumnSize(colSize)
+	{
+		for(let i = 0; i < this.idxAudioCard; i++)
+		{
+			this.arrAudioCard[i] =  <div key={i} className="container">
+										<AudioCard CUE={ this.CUE } _play={ this.handlePlay } audioMetadata={ this.metadatas[i] } gridColSize={ colSize }/>
+									</div>
+		}
+		this.setState({ gridColSize: colSize });
+	}
 
-    reRenderAudioCards = (numBeGoingToRender) => {
-        console.log("reRenderAudioCards() is going to run!!");
+	componentDidMount()
+	{
+		var elems = document.querySelectorAll('.fixed-action-btn');
+		var instances = window.M.FloatingActionButton.init(elems, {
+			direction: 'top'
+		});
+	}
 
-        let startingIndex = 0;
-        if (numProcessedItem === 0)
-        {
-            startingIndex = 0;
-        }
-        else
-        {
-            startingIndex = numProcessedItem - numBeGoingToRender;
-        }
+	componentDidUpdate()
+	{
+		console.log("IS PLAYING: " + this.state.isPlaying);
+		console.log("CUE SHEET: ", this.queueSheet);
+		console.log("ARR AUDIO: ", this.arrAudioCard);
+		console.log("============================");
+		if (this.isShuffleMode || this.isRepeatMode) { 
+			document.getElementById('queue_icon').classList.add('queue_disabled'); 
+		}else {
+			document.getElementById('queue_icon').classList.remove('queue_disabled');
+		}
+	}
 
-        for (let i = 0; i < numBeGoingToRender; i++)
-        {
-            let paramsForAudioInfo = {
-                pathname: `/${startingIndex}`,
-                audioInfo: {
-                    title: tagArray[startingIndex].title,
-                    artist: tagArray[startingIndex].artist,
-                    album: tagArray[startingIndex].album,
-                    year: tagArray[startingIndex].year,
-                    track: tagArray[startingIndex].track,
-                },
-                isHaveArt: true,
-                albumArtUrl: "",
-                index: startingIndex
-            };
+	componentWillUnmount()
+	{
+		clearTimeout(this.timeoutID);
+	}
 
-            if (tagArray[startingIndex].picture === undefined) 
-            {
-                paramsForAudioInfo.isHaveArt = false;
-                paramsForAudioInfo.albumArtUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/1200px-No_image_available.svg.png";
-            }
-            else
-            {
-                const { data, type } = tagArray[startingIndex].picture;
-                const byteArray = new Uint8Array(data);
-                const blob = new Blob([byteArray], { type });
-                paramsForAudioInfo.albumArtUrl = URL.createObjectURL(blob);
-            }
+	render()
+	{
+		console.log("render() has ran");
+		
+		return (
+			<div className="row">
+				<div id="nav" className="col xl2 l2 m2 s2">
+					<div id="samplesButton">
+						{ this.buttonLoadSample }
+					</div>
+					<div id="gridColSize">
+						<div className="setColSize" onClick={ () => { this.changeGridColumnSize(2) } }>6</div>
+						<div className="setColSize" onClick={ () => { this.changeGridColumnSize(3) } }>4</div>
+						<div className="setColSize" onClick={ () => { this.changeGridColumnSize(4) } }>3</div>
+						<div className="setColSize" onClick={ () => { this.changeGridColumnSize(6) } }>2</div>
+					</div>
+					<div className="fixed-action-btn">
+						<a className="btn-floating btn-small indigo lighten-2"><i className="large material-icons">add</i></a>
+						<ul>
+							<li>
+								<a onClick={ () => {this.openFileDialog(false)} } className="btn-floating blue"><div className="fileSelector">ADD</div></a>
+							</li>
+							<li>
+								<a onClick={ () => {this.openFileDialog(true)} } className="btn-floating green"><div className="fileSelector">NEW</div></a>
+							</li>
+						</ul>
+					</div>
+				</div>
 
-            this.audioCards[startingIndex] =    <div key={startingIndex} className="container">
-                                                    <AudioCard CUE={ this.CUE } audioInfoParams={ paramsForAudioInfo } _play={ this._playAndChangeState }/>
-                                                </div>
-            startingIndex = startingIndex + 1;
-        }
-    }
+				<div id="now_playing" className="col xl10 l10 m10 s10">
+					<a id="play_button" className="btn-floating btn-large waves-effect waves-light red">
+						<i className="large material-icons" onClick={ () => { this.pause() }}>{ this.state.isPlaying === true ? "pause" : "play_arrow" }</i>
+					</a>
+					<div className="panel">
+						<div className="title_and_album">
+							<label className="album">{this.CUE.CUR === "" ? "- - -" : this.metadatas[this.CUE.CUR].tag.album}</label>
+							<label className="artist_title">{this.CUE.CUR === "" ? "- - -" : `${this.metadatas[this.CUE.CUR].tag.artist} - ${this.metadatas[this.CUE.CUR].tag.title}`}</label>
+						</div>
+						
+						<div className="controller">
+							<div className="controls">
 
-    loadSamples = () => {
-        this.isSampleBeeningLoad = true;
-        this.setState({
-            isNeedToReRender: true
-        });
+								<div className="queue waves-effect waves-light">
+									<i id="queue_icon" className="medium material-icons" onClick={ (event) => { 
+											this.isQueuingMode === false ? event.target.classList.add('clicked') : event.target.classList.remove('clicked');
+											if (this.isShuffleMode === true) { document.getElementById('shuffle_icon').classList.remove('clicked'); this.isShuffleMode = false; }
+											if (this.isRepeatMode === true) { document.getElementById('repeat_icon').classList.remove('clicked'); this.isRepeatMode = false; }
+											this.toggleQueuingMode();
+										}}>{"plus_one"}</i>
+								</div>
+								<div className="shuffle waves-effect waves-light">
+									<i id="shuffle_icon" className="medium material-icons" onClick={ (event) => {
+											this.isShuffleMode === false ? event.target.classList.add('clicked') : event.target.classList.remove('clicked');
+											this.isShuffleMode = !(this.isShuffleMode);
+											if (this.audio !== null) { this.queueNextAudio(this.audio.currentTime); }
+											if (this.isRepeatMode === true) { document.getElementById('repeat_icon').classList.remove('clicked'); this.isRepeatMode = false; }
+											if (this.isQueuingMode === true) { document.getElementById('queue_icon').classList.remove('clicked'); this.toggleQueuingMode(); }
+											this.setState({isNeedToReRender: true});
+										}}>{"shuffle"}</i>
+								</div>
+								<div className="repeat waves-effect waves-light">
+									<i id="repeat_icon" className="medium material-icons" onClick={ (event) => { 
+											this.isRepeatMode === false ? event.target.classList.add('clicked') : event.target.classList.remove('clicked')
+											this.isRepeatMode = !(this.isRepeatMode);
+											if (this.audio !== null) { this.queueNextAudio(this.audio.currentTime); }
+											if (this.isShuffleMode === true) { document.getElementById('shuffle_icon').classList.remove('clicked'); this.isShuffleMode = false; }
+											if (this.isQueuingMode === true) { document.getElementById('queue_icon').classList.remove('clicked'); this.toggleQueuingMode(); }
+											this.setState({isNeedToReRender: true});
+										}}>{"repeat_one"}</i>
+								</div>
+								<div className="next waves-effect waves-green">
+									<i className="medium material-icons" onClick={ () => { if (this.CUE.CUR !== "") { this.queueNextAudio(this.idxDurationPair.get(this.CUE.CUR)); } }}>{"skip_next"}</i>
+								</div>
 
-        axios.get('/api/samples/get')
-            .then( (res) => {
-                console.log(res.data);
+							</div>
+						</div>
+					</div>
+				</div>
 
-                let buffers = res.data.body;
-                let samplesList = buffers.map( (each, i) => {
-                    return new File([new Uint8Array(each.data)], 'sample_'+i+'.mp3', { type: 'audio/mpeg' });
-                });
+				<div id="content" className="col xl10 l10 m10 s10">
+					<Router>
+						<Route exact path="/" render={ () => { return (this.arrAudioCard); }}/>
+						<Route exact path="/:audioIndex" component={AudioInfo} />
+					</Router>
+				</div>
 
-                this.isSampleBeeningLoad = -1;
-                this.insertTagInfoAndChangeState(samplesList, false);
-            })  
-            .catch( (err) => {
-                console.log(err);
-            });
-    }
-    
-    componentDidMount()
-    {
-        var elems = document.querySelectorAll('.fixed-action-btn');
-        var instances = window.M.FloatingActionButton.init(elems, {
-            direction: 'top'
-        });
-    }
-
-    componentDidUpdate()
-    {
-        console.log("componentDidUpdate() has ran");
-        console.log("this.state.isPlaying: " + this.state.isPlaying);
-        if (this.state.isPlaying === true) { console.log(`nowPlaying: ${this.CUE.CUR}, duration: ${tagArray[this.CUE.CUR].duration - this.pausedAt}`); }
-        console.log(`numProcessedItem: ${numProcessedItem}, tagArray.length: ${tagArray.length}`);
-        console.log(`numDurationsReceived: ${numDurationsReceived}, tagArray.length: ${tagArray.length}`);
-        console.log("Queued: ", this.queSheet);
-        console.log("tagArray: ", tagArray);
-        console.log("============================");
-        if (this.isShuffleMode || this.isRepeatMode) { 
-            document.getElementById('queue_icon').classList.add('queue_disabled'); 
-        }else {
-            document.getElementById('queue_icon').classList.remove('queue_disabled');
-        }
-        this.queSheet.map( (each) => {
-            console.assert(typeof(each) === 'number');
-        });
-    }
-
-    componentWillUnmount()
-    {
-        clearTimeout(this.timeoutId);
-    }
-
-    render()
-    {
-        console.log("render() has ran");
-        let loadSampleButton = "";
-
-        switch (this.isSampleBeeningLoad) {
-            case false :
-                loadSampleButton = <a className="waves-effect waves-light btn-large" onClick={ () => {this.loadSamples()} }><i className="material-icons right">cloud</i>Load Samples</a>;
-                break;
-            case true :
-                loadSampleButton =  <div className="preloader-wrapper big active">
-                                        <div className="spinner-layer spinner-blue-only">
-                                        <div className="circle-clipper left">
-                                            <div className="circle"></div>
-                                        </div>
-                                        <div className="gap-patch">
-                                            <div className="circle"></div>
-                                        </div>
-                                        <div className="circle-clipper right">
-                                            <div className="circle"></div>
-                                        </div>
-                                        </div>
-                                    </div>
-                break;
-            default:
-                loadSampleButton = "";
-        }
-        
-        return (
-            <div className="row">
-                <div id="nav" className="col xl2 l2 m2 s2">
-                    <div id="samplesButton">
-                        { loadSampleButton }
-                    </div>
-                    <div className="fixed-action-btn">
-                        <a className="btn-floating btn-small grey lighten-1"><i className="large material-icons">add</i></a>
-                        <ul>
-                            <li>
-                                <a onClick={ () => {this.openFileDialog(false)} } className="btn-floating blue"><i className="material-icons">queue</i></a>
-                            </li>
-                            <li>
-                                <a onClick={ () => {this.openFileDialog(true)} } className="btn-floating green"><i className="material-icons">playlist_add</i></a>
-                            </li>
-                            
-                        </ul>
-                    </div>
-                </div>
-  
-                <div id="now_playing" className="col xl10 l10 m10 s10">
-                    <a id="play_button" className="btn-floating btn-large waves-effect waves-light red">
-                        <i className="large material-icons" onClick={ () => { this._pauseAndChangeState() }}>{ this.state.isPlaying === true ? "pause" : "play_arrow" }</i>
-                    </a>
-                    <div className="panel">
-                        <div className="title_and_album">
-                            <label className="album">{this.CUE.CUR === "" ? "- - -" : tagArray[this.CUE.CUR].album}</label>
-                            <label className="artist_title">{this.CUE.CUR === "" ? "- - -" : `${tagArray[this.CUE.CUR].artist} - ${tagArray[this.CUE.CUR].title}`}</label>
-                        </div>
-                        
-                        <div className="controller">
-                            <div className="controls">
-
-                                <div className="queue waves-effect waves-light">
-                                    <i id="queue_icon" className="medium material-icons" onClick={ (event) => { 
-                                            this.isQueuingMode === false ? event.target.classList.add('clicked') : event.target.classList.remove('clicked');
-                                            if (this.isShuffleMode === true) { document.getElementById('shuffle_icon').classList.remove('clicked'); this.isShuffleMode = false; }
-                                            if (this.isRepeatMode === true) { document.getElementById('repeat_icon').classList.remove('clicked'); this.isRepeatMode = false; }
-                                            this.toggleQueuingMode();
-                                        }}>{"plus_one"}</i>
-                                </div>
-                                <div className="shuffle waves-effect waves-light">
-                                    <i id="shuffle_icon" className="medium material-icons" onClick={ (event) => {
-                                            this.isShuffleMode === false ? event.target.classList.add('clicked') : event.target.classList.remove('clicked');
-                                            this.isShuffleMode = !(this.isShuffleMode);
-                                            if (this.audio !== null) { this.queueNextAudio(this.audio.currentTime); }
-                                            if (this.isRepeatMode === true) { document.getElementById('repeat_icon').classList.remove('clicked'); this.isRepeatMode = false; }
-                                            if (this.isQueuingMode === true) { document.getElementById('queue_icon').classList.remove('clicked'); this.toggleQueuingMode(); }
-                                            this.setState({isNeedToReRender: true});
-                                        }}>{"shuffle"}</i>
-                                </div>
-                                <div className="repeat waves-effect waves-light">
-                                    <i id="repeat_icon" className="medium material-icons" onClick={ (event) => { 
-                                            this.isRepeatMode === false ? event.target.classList.add('clicked') : event.target.classList.remove('clicked')
-                                            this.isRepeatMode = !(this.isRepeatMode);
-                                            if (this.audio !== null) { this.queueNextAudio(this.audio.currentTime); }
-                                            if (this.isShuffleMode === true) { document.getElementById('shuffle_icon').classList.remove('clicked'); this.isShuffleMode = false; }
-                                            if (this.isQueuingMode === true) { document.getElementById('queue_icon').classList.remove('clicked'); this.toggleQueuingMode(); }
-                                            this.setState({isNeedToReRender: true});
-                                        }}>{"repeat_one"}</i>
-                                </div>
-                                <div className="next waves-effect waves-green">
-                                    <i className="medium material-icons" onClick={ () => { if (this.CUE.CUR !== "") { this.queueNextAudio(tagArray[this.CUE.CUR].duration); } }}>{"skip_next"}</i>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-                </div>
-  
-                <div id="content" className="col xl10 l10 m10 s10">
-                    <Router>
-                        <Route exact path="/" render={ () => { return (this.audioCards); }}/>
-                        <Route exact path="/:audioIndex" component={AudioInfo} />
-                    </Router>
-                </div>
-
-                <input type="file" accept="audio/*" id="new" onChange={ (event) => {this.insertTagInfoAndChangeState(event.target.files, true)} } multiple hidden/>
-                <input type="file" accept="audio/*" id="append" onChange={ (event) => {this.insertTagInfoAndChangeState(event.target.files, false)} } multiple hidden/>
-            </div>
-        );
-    }
+				<input type="file" accept="audio/*" id="new" onChange={ (event) => {this.handleFilelistThenAssignArrAudio(event.target.files, true)} } multiple hidden preload="metadata"/>
+				<input type="file" accept="audio/*" id="append" onChange={ (event) => {this.handleFilelistThenAssignArrAudio(event.target.files, false)} } multiple hidden preload="metadata"/>
+			</div>
+		);
+	}
 }
 
 export default Main;
+
+/*
+	TODO:
+		vertical axis count by state
+		display error
+		loading screen
+
+		read
+		https://codeburst.io/how-to-not-react-common-anti-patterns-and-gotchas-in-react-40141fe0dcd
+*/
