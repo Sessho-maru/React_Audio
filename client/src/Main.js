@@ -459,6 +459,10 @@ class Main extends Component
 										<AudioCard CUE={ this.CUE } _play={ this.handlePlay } audioMetadata={ this.metadatas[i] } gridColSize={ colSize }/>
 									</div>
 		}
+		[...document.getElementsByClassName('setColSize')].forEach( (each) => {
+			each.setAttribute('style', ' background: rgba(95,117,241,0.4)');
+		});
+		document.getElementById(`colSize${colSize}`).setAttribute('style', 'background: rgba(242,180,0);');
 		this.setState({ gridColSize: colSize });
 	}
 
@@ -499,10 +503,10 @@ class Main extends Component
 						{ this.buttonLoadSample }
 					</div>
 					<div id="gridColSize">
-						<div className="setColSize" onClick={ () => { this.changeGridColumnSize(2) } }>6</div>
-						<div className="setColSize" onClick={ () => { this.changeGridColumnSize(3) } }>4</div>
-						<div className="setColSize" onClick={ () => { this.changeGridColumnSize(4) } }>3</div>
-						<div className="setColSize" onClick={ () => { this.changeGridColumnSize(6) } }>2</div>
+						<div id="colSize2" className="setColSize" onClick={ () => { this.changeGridColumnSize(2) } }>6</div>
+						<div id="colSize3" className="setColSize" onClick={ () => { this.changeGridColumnSize(3) } }>4</div>
+						<div id="colSize4" className="setColSize" onClick={ () => { this.changeGridColumnSize(4) } }>3</div>
+						<div id="colSize6" className="setColSize" onClick={ () => { this.changeGridColumnSize(6) } }>2</div>
 					</div>
 					<div className="fixed-action-btn">
 						<a className="btn-floating btn-small indigo lighten-2"><i className="large material-icons">add</i></a>

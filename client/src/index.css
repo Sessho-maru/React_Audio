@@ -149,13 +149,13 @@ code {
   background-color:#e8eaf6;
 }
 
-.App #gridColSize{
+.App #gridColSize {
   display: flex;
   justify-content: space-evenly;
   margin-top: 14%;
 }
 
-.App .setColSize{
+.App .setColSize {
   display:inline-block;
   border:1px solid #CCC;
   border-radius: 15px;
@@ -163,10 +163,14 @@ code {
   color: rgba(235,233,223);
   font-family:Verdana, Geneva, Tahoma, sans-serif;
   font-size: 18px;
-  box-shadow: 0 0 5px -1px rgba(0,0,0,0.2);
+  box-shadow: 2.8px 2.8px 9px -1px rgba(0,0,0,0.2);
   cursor: pointer;
   padding: 14px;
   text-align: center;
+}
+
+.App #colSize3 {
+  background: rgba(242,180,0);
 }
 
 .App .queue_disabled {
