@@ -68,14 +68,14 @@ _**input**_ されたオーディオファイルを `this.arrAudioCard` に _**a
 #### case 2 : `fileList` が空いている場合
 新しく `this.arrAudioCard` に割り当てるオーディオファイルがない為、 [すぐ _return_ します](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L393-L397)。
 #### それとも
-[fetchTagThenInitCard( _**fileList: Filelist**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L330-L362)　を呼び出します。
+[fetchTagThenInitCard( _**fileList: FileList**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L330-L362)　を呼び出します。
 
 </br>
 
 ### 3) オーディオタグを読み取る
-fetchTagThenInitCard( _**fileList: Filelist**_ )　ではパラメタ `flieList` を _forEach_ で[格要素を巡回します](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L339-L361)。</br>
-格 _loop_ では外部ライブラリ `this.jsmediatags` の [read( _**each: File**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L340) を呼び出してオーディオファイルからタグを取ります。</br>
-read( _**each: File**_ ) が成功したら _async callback_ `onSuccess()`　を実行されます。
+fetchTagThenInitCard( _**fileList: FileList**_ )　ではパラメタ `flieList` を _forEach_ で[格要素を巡回します](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L339-L361)。</br>
+格 _loop_ では外部ライブラリ `this.jsmediatags` の _async function_ [read( _**each: File**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L340) を呼び出してオーディオファイルからタグを取ります。</br>
+read( _**each: File**_ ) が成功したら _callback_ `onSuccess()`　が実行されます。
 ```JSX
 onSuccess: (tag) => {
     checker(tag, each.name);
@@ -92,9 +92,9 @@ onSuccess: (tag) => {
     }
 },
 ```
-`onSuccess()` で読み取ったタグ(`tag`)とオーディオファイル(`each`)をパラメタにする　[initAudioCard( _**tag: object, audio: file**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L295-L328) を呼び出します。</br>
+`onSuccess()` で読み取ったタグ(`tag`)とオーディオファイル(`each`)をパラメタにする　[initAudioCard( _**tag: Object, audio: File**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L295-L328) を呼び出します。</br>
 後、 `this.arrAudioCard` の _index_ である　`this.idxAudioCard` は 1つづ足す、</br>
-`onSuccess()` が非同期的に作動する為、 最後の _loop_ で `setState()` を実行する為の変数 `counter`　は　1つづ引きます。
+`onSuccess()` は非同期的に実行される為、 最後の _loop_ で `setState()` を実行する為の変数 [`counter`](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L338)　は　1つづ引きます。
 
 </br>
 
