@@ -1,5 +1,5 @@
 # このアプリについて
-このSPAアプリケーションはいくつの機能が具現されているミュージックプレイヤーです。例えば
+このSPAアプリケーションはいくつの機能が使えるミュージックプレイヤーです。例えば
 * プーレイ
     -
     - プレイ/ポーズ、シャッフル、リピート、キューイング<br/>
@@ -7,11 +7,11 @@
     <br/><br/><br/>
 * タグ解釈
   -
-  - ミュージックファイルに組み込んでいる( `title`, `artist`, `album`, `release year`, `album cover` )情報を読み取れます
+  - オーディオクファイルに組み込んでいる( `title`, `artist`, `album`, `release year`, `album cover` )情報を読み取れます
   <br/><br/><br/>
-* ユーチューブ検索からクローリング
+* YouTube 検索からクローリング
   -
-  - タグ情報をキーワードとしてユーチューブ検索を行い、その結果をページにレンダリングします<br/>
+  - タグ情報をキーワードとして YouTube 検索を行い、その結果をページに表示ます<br/>
     <br/><img src="https://raw.githubusercontent.com/Sessho-maru/React_Audio/master/example.gif"/><br/><br/><br/><br/>
 
 タグが多く入力されてあればあるほど多い機能が使えます。<br/>
@@ -24,7 +24,10 @@
 ### 重要なメンバー変数：</br>
 ```JSX
 this.arrAudioCard: react.element[]　// reactComponent <AudioCard> を要素としてする配列
-this.idxAudioCard: number // this.arrAudioCard の index
+this.idxAudioCard: Number // this.arrAudioCard の index
+this.CUE: Object // 再生をコントロールする為、オーディオの index を指定
+                    // CUR: Number 今、プレイ中のオーディオ index
+                    // NEXT: Number 次プレイするオーディオ index
 this.idxDurationPair: Map(index: number, duration: number) // 格音楽の index と再生の長さ(duration)を持つ Map
 ```
 
@@ -74,7 +77,7 @@ _**input**_ されたオーディオファイルを `this.arrAudioCard` に _**a
 
 ### 3) オーディオタグを読み取る
 fetchTagThenInitCard( _**fileList: FileList**_ )　ではパラメタ `flieList` を _forEach_ で[格要素を巡回します](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L339-L361)。</br>
-格 _loop_ では外部ライブラリ `this.jsmediatags` の _async function_ [read( _**each: File**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L340) を呼び出してオーディオファイルからタグを取ります。</br>
+格 _loop_ では外部ライブラリ `this.jsmediatags` の _async function_ [read( _**each: File**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L340) を呼び出してオーディオファイルからタグ情報を取ります。</br>
 read( _**each: File**_ ) が成功したら _callback_ `onSuccess()`　が実行されます。
 ```JSX
 onSuccess: (tag) => {
@@ -97,6 +100,64 @@ onSuccess: (tag) => {
 `onSuccess()` は非同期的に実行される為、 最後の _loop_ で `setState()` を実行する為の変数 [`counter`](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L338)　は　1つづ引きます。
 
 </br>
+
+### 4) reactComponent `<AudioCard>` の配列を初期化する
+initAudioCard( _**tag: Object, audio: File**_ ) では `<AudioCard>` _component_ に渡る _props_ を定義し</br>
+`<AudioCard>` を `this.arrAudioCard` に割り当てます。
+```JSX
+this.arrAudioCard[this.idxAudioCard] =  <div key={this.idxAudioCard} className="container">
+                                          <AudioCard CUE={ this.CUE } _play={ this.handlePlay } audioMetadata={ metadata } gridColSize={ this.state.gridColSize }/>
+                                        </div>
+```
+以下は `<AudioCard>` に渡される _props_ の一部です。
+#### CUE={ this.CUE }
+現在の `this.CUE` オブジェクトを渡します。</br>
+`this.CUE` は _Object_ の為、参照で渡られます。
+
+#### _play={ this.handlePlay }
+`<Main>` から定義された `this.handlePlay` を渡します。</br>
+Javascript では関数も基本的に参照渡しの為 _function pointer_ の形で渡されます。
+
+#### audioMetadata={ metadata }
+`metadata` オブジェクトを渡します。
+```JSX
+let metadata = {
+  pathname: `/${this.idxAudioCard}`,  // コンポーネント <AudioInfo> に繋がる <Link> path の pathname
+  tag: {                              // オーディオファイルのタグ情報
+    title: tag.tags.title,
+    artist: tag.tags.artist,
+    album: tag.tags.album,
+    genre: tag.tags.genre,
+    year: tag.tags.year,
+    track: tag.tags.track,
+  },                                  
+  albumArtUrl: "",                    // イメージファイルから作った Blob オブジェクト Url
+  index: this.idxAudioCard            // index
+};
+```
+`<AudioCard>` では **react-router** の `<Link>` を使ってページの url を _**/:audioIndex**_ に移動させています。</br>
+```JSX
+<Link to={ props.audioMetadata }>   // pathname: `/${this.idxAudioCard}`
+    <div className="card-image">
+        <img src={ props.audioMetadata.albumArtUrl } />
+    </div>
+    <div className="card-content">
+        <p>{ props.audioMetadata.tag.title }</p>
+    </div>
+</Link>
+```
+パース _**/:audioIndex**_ は `<Router>` によって YouTubeのクローリング結果を並べる他のコンポーネント `<AudioInfo>` と[繋がります](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L575-L578)。
+```JSX
+<Router>
+  <Route exact path="/" render={ () => { return (this.arrAudioCard); }}/>
+  <Route exact path="/:audioIndex" component={AudioInfo} />
+</Router>
+```
+なので、 `<AudioCard>` コンポーネントをクリックしたら `<Link>` によって url が _**/:audioIndex**_ に移動されると同時に</br>
+`<Router>` によって `<Main>` コンポーネントではなくて `<AudioInfo>` がページにレンダリングされます。
+
+</br>
+
 
 # ローカル設置方法
 nodeパッケージ設置
