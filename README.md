@@ -112,7 +112,7 @@ this.arrAudioCard[this.idxAudioCard] =  <div key={this.idxAudioCard} className="
 以下は `<AudioCard>` に渡される _props_ の一部です。
 #### CUE={ this.CUE }
 現在の `this.CUE` オブジェクトを渡します。</br>
-`this.CUE` は _Object_ の為、参照で渡られます。
+`this.CUE` は _Object_ の為、参照で渡されます。
 
 #### _play={ this.handlePlay }
 `<Main>` から定義された `this.handlePlay` を渡します。</br>
@@ -135,7 +135,7 @@ let metadata = {
   index: this.idxAudioCard            // index
 };
 ```
-`<AudioCard>` では **react-router** の `<Link>` を使ってページの url を _**/:audioIndex**_ に移動させています。</br>
+`<AudioCard>` では **react-router** の `<Link>` を使ってページの url を _**/:audioIndex**_ に[移動させています。](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/AudioCard.js#L12-L19)</br>
 ```JSX
 <Link to={ props.audioMetadata }>   // pathname: `/${this.idxAudioCard}`
     <div className="card-image">
@@ -146,7 +146,7 @@ let metadata = {
     </div>
 </Link>
 ```
-パース _**/:audioIndex**_ は `<Router>` によって YouTubeのクローリング結果を並べる他のコンポーネント `<AudioInfo>` と[繋がります](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L575-L578)。
+_path_ _**/:audioIndex**_ は `<Router>` によって YouTube クローリング結果を並べる他のコンポーネント `<AudioInfo>` と[繋がります](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L575-L578)。
 ```JSX
 <Router>
   <Route exact path="/" render={ () => { return (this.arrAudioCard); }}/>
