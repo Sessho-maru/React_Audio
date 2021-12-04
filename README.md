@@ -12,13 +12,7 @@
 * YouTube 検索からクローリング
   -
   - タグ情報をキーワードとして YouTube 検索を行い、その結果をページに表示ます<br/>
-    <br/><img src="https://raw.githubusercontent.com/Sessho-maru/React_Audio/master/example.gif"/><br/><br/><br/><br/>
-
-タグが多く入力されてあればあるほど多い機能が使えます。<br/>
-> `title` and `artist`: ユーチューブ検索を行う為必要です。<br/><br/>
-> さらに、`album`と`album cover`の情報が書いてあると、このページの全機能が使えます<br/><br/>
-
-<br/>
+    <br/><img src="https://raw.githubusercontent.com/Sessho-maru/React_Audio/master/example.gif"/><br/><br/><br/>
 
 # プログラムの概略的なフロー
 ### 重要なメンバー変数：</br>
@@ -31,10 +25,8 @@ this.CUE: Object // 再生をコントロールする為、オーディオの in
 this.idxDurationPair: Map(index: number, duration: number) // 格音楽の index と再生の長さ(duration)を持つ Map
 ```
 
-</br>
-
-### 1) ユーザーからオーディオファイルを貰う
-ユーザーからオーディオファイル _**input**_ を貰います。</br>
+### 0 ) ユーザーからのオーディオファイル _input_ 処理
+#### * ユーザーからオーディオファイル _**input**_ を貰います。
 _**input**_ モードは２つがあります。</br>
 #### ADD
 ```JSX
@@ -50,19 +42,17 @@ _**input**_ されたオーディオファイルを `this.arrAudioCard` に _**a
 パラメタ `clear` を _true_ にセットします。</br>
 `this.arrAudioCard` を初期化した後 _**append**_ します。</br>
 
-</br>
-
 [openFileDialog( _**clear: bool**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L401-L413)　から</br>
 格 `<input type="file" accept="audio/*">`　ノード
 ```JSX
 <input type="file" accept="audio/*" id="new" onChange={ (event) => {this.handleFileListThenAssignArrAudio(event.target.files, true)} } multiple hidden preload="metadata"/>
 <input type="file" accept="audio/*" id="append" onChange={ (event) => {this.handleFileListThenAssignArrAudio(event.target.files, false)} } multiple hidden preload="metadata"/>
 ```
-の _onClick_ イベントを発生させます。
-    
-<br/>
+の _onClick_ イベントを発生させます。</br>
+ユーザーがオディールファイルを選択したら `<input>` ノードの _onChange_ イベントが発生され</br>
+handleFileListThenAssignArrAudio( _**flieLilst: FileList, clear: bool**_ ) が実行されます。</br></br>
 
-### 2) ユーザーからのオーディオファイルをチェックして分岐する
+#### * _input_ をチェックして分岐する
 [handleFileListThenAssignArrAudio( _**flieLilst: FileList, clear: bool**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L364-L399)　から</br>
 ユーザーによって _**input**_ された `fileList` をチェックして分岐します。
 #### case 1 : パラメタ `clear` が _true_ にセットされた場合
@@ -70,13 +60,13 @@ _**input**_ されたオーディオファイルを `this.arrAudioCard` に _**a
 その時、 もしオーディオが再生中だったら、　オーディオを停止して `this.audio` を[初期化すます](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L377-L388)
 #### case 2 : `fileList` が空いている場合
 新しく `this.arrAudioCard` に割り当てるオーディオファイルがない為、 [すぐ _return_ します](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L393-L397)。
-#### それとも
+#### その後
 [fetchTagThenInitCard( _**fileList: FileList**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L330-L362)　を呼び出します。
 
 </br>
 
-### 3) オーディオタグを読み取る
-fetchTagThenInitCard( _**fileList: FileList**_ )　ではパラメタ `flieList` を _forEach_ で[格要素を巡回します](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L339-L361)。</br>
+### 1 ) オーディオタグを読み取って `<AudioCard>` を初期化してページをに表示
+fetchTagThenInitCard( _**fileList: FileList**_ )　ではパラメタ `flieList` を _forEach_ で格要素を巡回して格ファイルからタグを取ります。</br>
 格 _loop_ では外部ライブラリ `this.jsmediatags` の _async function_ [read( _**each: File**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L340) を呼び出してオーディオファイルからタグ情報を取ります。</br>
 read( _**each: File**_ ) が成功したら _callback_ `onSuccess()`　が実行されます。
 ```JSX
@@ -101,7 +91,7 @@ onSuccess: (tag) => {
 
 </br>
 
-### 4) reactComponent `<AudioCard>` の配列を初期化する
+#### * reactComponent `<AudioCard>` の配列を初期化する
 initAudioCard( _**tag: Object, audio: File**_ ) では `<AudioCard>` _component_ に渡る _props_ を定義し</br>
 `<AudioCard>` を `this.arrAudioCard` に割り当てます。
 ```JSX
@@ -135,9 +125,9 @@ let metadata = {
   index: this.idxAudioCard            // index
 };
 ```
-`<AudioCard>` では **react-router** の `<Link>` を使ってページの url を _**/:audioIndex**_ に[移動させています。](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/AudioCard.js#L12-L19)</br>
+`<AudioCard>` では **react-router** の `<Link>` を使ってページの url を _**/:audioIndex**_ に移動させています。</br>
 ```JSX
-<Link to={ props.audioMetadata }>   // pathname: `/${this.idxAudioCard}`
+<Link to={ props.audioMetadata }>
     <div className="card-image">
         <img src={ props.audioMetadata.albumArtUrl } />
     </div>
