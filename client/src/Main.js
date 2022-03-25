@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
 import AudioCard from './AudioCard';
 import AudioInfo from './Audioinfo';
 
-const rootDir = {local: 'http://localhost:3000/', server: '???'};
+const rootDir = {local: 'http://localhost:3000/', server: 'http://184.72.2.1/'};
 
 class Main extends Component
 {
@@ -52,7 +52,9 @@ class Main extends Component
 		this.isShuffleMode = false;
 		this.isRepeatMode = false;
 
-		this.buttonLoadSample = <a className="waves-effect waves-light btn-large" onClick={ () => {this.loadSamples()} }><i className="material-icons right">cloud</i>Load Samples</a>;
+		this.sampleID = 0;
+		this.buttonLoadSample = <a className="waves-effect waves-light btn-large" onClick={ () => {this.loadSamples()} }><i className="material-icons right">cloud</i>Load Sample</a>;
+
 		this.state = {
 			isDone: false,
 			isPlaying: false,
@@ -70,7 +72,7 @@ class Main extends Component
 	}
 
 	isHome = () =>{
-		return window.location.href === rootDir.local;		
+		return window.location.href === rootDir.local;
 	}
 
 	setLabelStateIdxOf = (state, index, idxQueue = 'enqueue') => {
@@ -414,17 +416,32 @@ class Main extends Component
 
 	loadSamples()
 	{
-		axios.get('/api/samples/get')
+		axios.get(`/api/samples/get?id=${this.sampleID}`)
 			.then( (res) => {
 				console.log(res.data);
 
-				let buffers = res.data.body;
-				let samplesList = buffers.map( (each, i) => {
-					return new File([new Uint8Array(each.data)], 'sample_'+i+'.mp3', { type: 'audio/mpeg' });
-				});
+				const buffer = res.data.body.data;
+				let oneTenth = [];
 
-				this.handleFilelistThenAssignArrAudio(samplesList, false);
-				this.buttonLoadSample = "";
+				for (let i = 0; i < buffer.length / 20; i++)
+				{
+					oneTenth.push(buffer[i]);
+				}
+
+				let sample = new File([new Uint8Array(oneTenth)], 'sample_'+ this.sampleID +'.mp3', { type: 'audio/mpeg' });
+
+				this.handleFilelistThenAssignArrAudio([sample], false);
+
+				if (this.sampleID < 3)
+				{
+					this.buttonLoadSample = <a className="waves-effect waves-light btn-large" onClick={ () => {this.loadSamples()} }><i className="material-icons right">cloud</i>Load Sample</a>;
+				}
+				else
+				{
+					this.buttonLoadSample = "";
+				}
+				this.sampleID++;
+				
 				this.setState({
 					isSampleBeeningLoad: false
 				});
@@ -589,7 +606,6 @@ export default Main;
 
 /*
 	TODO:
-		vertical axis count by state
 		display error
 		loading screen
 

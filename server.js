@@ -13,12 +13,7 @@ const fs = require('fs');
 let byteArray = [];
 
 const tunes = [
-	{ id: 0, src: __dirname + '/samples/0_bts_dynamite.mp3' },
-	{ id: 1, src: __dirname + '/samples/1_momo_bbombbom.mp3' },
-	{ id: 2, src: __dirname + '/samples/2_maroon5_dontWannaKnow.mp3' },
-	{ id: 3, src: __dirname + '/samples/3_noriki_youNeedMe.mp3' },
-	{ id: 4, src: __dirname + '/samples/4_anri_lastSummerWhisper.mp3' },
-	{ id: 5, src: __dirname + '/samples/5_yuuko_shibuya_5am.mp3' }
+	{ id: 0, src: __dirname + '/samples/Angel Love.mp3' },
 ];
 
 function hitYoutube(ytSearch)
@@ -115,7 +110,13 @@ app.get('/api/get', (req, res) => {
 });
 
 app.get('/api/samples/get', (req, res) => {
-    res.status(200).send({msg: 'fetching...', body: byteArray});
+    res.status(200).send({msg: 'fetching...', body: byteArray[req.query.id]});
+});
+
+app.get('/api/samples/stream', (req, res) => {
+    const origin = byteArray[req.query.id];
+    const oneTwentieth = origin.data.slice(0, origin.length);
+    res.status(200).send({msg: 'streaming...', body: oneTwentieth});
 });
 
 app.listen(port, () => {
