@@ -3,14 +3,19 @@ const cors = require('cors');
 const app = express();
 const axios = require('axios');
 const cheerio = require('cheerio');
+const jsmediaTag = require('jsmediatags');
+const expressWs = require('express-ws')(app);
+const fs = require('fs');
+
 app.use(cors());
 
 const port = 5000;
 let ytInfos = [];
 let ytSearch = "";
 
-const fs = require('fs');
 let byteArray = [];
+let idxNetAudioByteFrom = 0;
+const halfKb = 500 * 1000;
 
 const tunes = [
 	{ id: 0, src: __dirname + '/samples/Angel Love.mp3' },
@@ -109,22 +114,66 @@ app.get('/api/get', (req, res) => {
     }
 });
 
-app.get('/api/samples/get', (req, res) => {
-    res.status(200).send({msg: 'fetching...', body: byteArray[req.query.id]});
+app.get('/api/samples/tag', (req, res) => {
+    const source = tunes[req.query.id].src;
+    fs.readFile(source, (err, data) => {
+        if(err) throw err;
+
+		byteArray.push(data);
+		jsmediaTag.read(data, {
+			onSuccess: (tag) => {
+                idxNetAudioByteFrom = tag.size;
+				res.status(200).send({msg: "Tag metadata fetched.", body: tag});
+			},
+			onError: (error) => {
+				console.log(error);
+			}    
+		});
+    });
 });
 
-app.get('/api/samples/stream', (req, res) => {
-    const origin = byteArray[req.query.id];
-    const oneTwentieth = origin.data.slice(0, origin.length);
-    res.status(200).send({msg: 'streaming...', body: oneTwentieth});
+app.ws('/', (ws) => {
+	ws.on('message', (id) => {
+        let buffer = byteArray[id].slice(idxNetAudioByteFrom, idxNetAudioByteFrom + halfKb);
+        ws.send(Uint8Array.from(buffer));
+		// let i = 0;
+		// while(true)
+		// {
+		// 	if (!(i < halfKb))
+		// 	{
+		// 		break;
+		// 	}
+		// 	ws.send(byteArray[id][i]);	
+		// 	i++;
+		// }
+	});
 });
+
+// app.get('/api/samples/get', (req, res) => {
+//     res.status(200).send({msg: 'fetching...', body: byteArray[req.query.id]});
+// });
+
+
+// app.get('/api/samples/stream', (req, res) => {
+//     const origin = byteArray[req.query.id];
+//     if (bucketSize === 0)
+//     {
+//         bucketSize = 131479;
+//     }
+
+//     if (bucketSize * (parseInt(req.query.idx) + 1) <= origin.length)
+//     {
+//         let partial = origin.slice(bucketSize * parseInt(req.query.idx), bucketSize * (parseInt(req.query.idx) + 1));
+//         res.status(200).send({msg: 'Streaming...', body: partial});
+//     }
+//     else
+//     {
+//         bucketSize = 0;
+//         let partial = origin.slice(bucketSize * parseInt(req.query.idx), origin.length);
+//         res.status(200).send({msg: 'Stream Finished', body: partial});
+//     }
+// });
 
 app.listen(port, () => {
-    console.log(`----------------CORS-enabled web server listening on port ${port}----------------`)
-    tunes.map( (each, i) => {
-        fs.readFile(each.src, (err, data) => {
-            if (err) throw err;
-            byteArray.push(data);
-        });
-	});
+    console.log(`----------------CORS-enabled web server listening on port ${port}----------------`);
 });

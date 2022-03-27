@@ -1,6 +1,7 @@
 import axios from 'axios';
 import React, { Component } from 'react';
 import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
+import { w3cwebsocket as WebSocket } from "websocket";
 import AudioCard from './AudioCard';
 import AudioInfo from './Audioinfo';
 
@@ -37,7 +38,7 @@ class Main extends Component
 		this.idxDurationPair = new Map();
 
 		this.timeoutID = "";
-		this.audio = null;
+		this.audio = new Audio();
 		this.pausedAt = 0;
 		this.CUE = {
 			CUR: "",
@@ -52,8 +53,12 @@ class Main extends Component
 		this.isShuffleMode = false;
 		this.isRepeatMode = false;
 
-		this.sampleID = 0;
-		this.buttonLoadSample = <a className="waves-effect waves-light btn-large" onClick={ () => {this.loadSamples()} }><i className="material-icons right">cloud</i>Load Sample</a>;
+		this.buffer = [];
+		this.socket = new WebSocket("ws://localhost:5000/");
+		this.reader = new FileReader();
+		this.idSampleBeloaded = 0;
+
+		this.buttonLoadSample = <a className="waves-effect waves-light btn-large" onClick={ () => {this.sampleGetTagMeta()} }><i className="material-icons right">cloud</i>Load Sample</a>;
 
 		this.state = {
 			isDone: false,
@@ -76,7 +81,7 @@ class Main extends Component
 	}
 
 	setLabelStateIdxOf = (state, index, idxQueue = 'enqueue') => {
-		if(this.isHome())
+		if (this.isHome())
 		{
 			switch(state)
 			{
@@ -123,7 +128,7 @@ class Main extends Component
 			}
 			else
 			{
-				if(!this.isQueueSheetEmpty())
+				if (!this.isQueueSheetEmpty())
 				{
 					this.CUE.NEXT = this.queueSheet.shift();
 				}
@@ -157,7 +162,7 @@ class Main extends Component
 		switch(flag)
 		{
 			case 'turnon':
-				for (let index = 0; index < this.arrAudioCard.length; index++)
+				for(let index = 0; index < this.arrAudioCard.length; index++)
 				{
 					if (index === this.CUE.CUR)
 					{
@@ -175,7 +180,7 @@ class Main extends Component
 				this.isQueuingMode = true;
 				break;
 			case 'turnoff':
-				for (let index = 0; index < this.arrAudioCard.length; index++)
+				for(let index = 0; index < this.arrAudioCard.length; index++)
 				{
 					if (index === this.CUE.CUR)
 					{
@@ -189,14 +194,9 @@ class Main extends Component
 	}
 
 	playThenSetDurationLabel = () => {
-		this.audio.src = URL.createObjectURL(this.arrFiles[this.CUE.NEXT]);
-		this.audio.onloadedmetadata = () => {
-			this.idxDurationPair.set(this.CUE.CUR, this.audio.duration);
-			console.log("NOW PLAYING:", this.metadatas[this.CUE.CUR].tag, "DURATION:", this.audio.duration);
-			this.queueNextAudio();
-		}
-		this.audio.play();
 		this.CUE.CUR = this.CUE.NEXT;
+		this.audio.src = URL.createObjectURL(this.arrFiles[this.CUE.CUR]);
+		this.audio.play();
 		this.setLabelStateIdxOf('play', this.CUE.CUR);
 	}
 
@@ -207,7 +207,7 @@ class Main extends Component
 			return;
 		}
 
-		if(this.isQueuingMode)
+		if (this.isQueuingMode)
 		{
 			let pos = this.queueSheet.indexOf(this.CUE.NEXT);
 			if (pos !== -1)
@@ -227,7 +227,14 @@ class Main extends Component
 		console.log("PLAY");
 		if (this.CUE.CUR === "")
 		{
-			this.audio = new Audio();
+
+			if (typeof(this.arrFiles[this.CUE.NEXT]) === "string")
+			{
+				console.log('Streaming via socket will be started');
+				this.socket.send(this.idSampleBeloaded);
+				return;
+			}
+
 			this.playThenSetDurationLabel();
 
 			this.pausedAt = 0;
@@ -280,9 +287,7 @@ class Main extends Component
 		clearTimeout(this.timeoutID);
 
 		this.setLabelStateIdxOf('stop', this.CUE.CUR);
-
 		this.audio.pause();
-		this.audio = null;
 		
 		this.CUE.CUR = "";
 		this.CUE.NEXT = "";
@@ -344,10 +349,10 @@ class Main extends Component
 					checker(tag, each.name);
 
 					this.initAudioCard(tag, each);
-					this.idxAudioCard++
+					this.idxAudioCard++;
 					counter--;
 
-					if(counter === 0)
+					if (counter === 0)
 					{
 						this.setState({
 							isDone: true
@@ -378,7 +383,7 @@ class Main extends Component
 
 				if (this.audio !== null)
 				{
-					if(this.state.isPlaying === true)
+					if (this.state.isPlaying === true)
 					{
 						this.audio.pause();
 						this.setState({
@@ -414,59 +419,17 @@ class Main extends Component
 		}
 	}
 
-	loadSamples()
-	{
-		axios.get(`/api/samples/get?id=${this.sampleID}`)
-			.then( (res) => {
-				console.log(res.data);
-
-				const buffer = res.data.body.data;
-				let oneTenth = [];
-
-				for (let i = 0; i < buffer.length / 20; i++)
-				{
-					oneTenth.push(buffer[i]);
-				}
-
-				let sample = new File([new Uint8Array(oneTenth)], 'sample_'+ this.sampleID +'.mp3', { type: 'audio/mpeg' });
-
-				this.handleFilelistThenAssignArrAudio([sample], false);
-
-				if (this.sampleID < 3)
-				{
-					this.buttonLoadSample = <a className="waves-effect waves-light btn-large" onClick={ () => {this.loadSamples()} }><i className="material-icons right">cloud</i>Load Sample</a>;
-				}
-				else
-				{
-					this.buttonLoadSample = "";
-				}
-				this.sampleID++;
-				
+	sampleGetTagMeta = () => {
+		axios.get(`/api/samples/tag?id=${this.idSampleBeloaded}`)
+			.then((res) => {
+				this.initAudioCard(res.data.body, "SOURCING_BY_STREAM");
 				this.setState({
-					isSampleBeeningLoad: false
+					isSampleBeeningLoad: true
 				});
-			})  
-			.catch( (err) => {
-				console.log(err);
 			});
-		
-		this.buttonLoadSample = <div className="preloader-wrapper big active">
-									<div className="spinner-layer spinner-blue-only">
-									<div className="circle-clipper left">
-										<div className="circle"></div>
-									</div>
-									<div className="gap-patch">
-										<div className="circle"></div>
-									</div>
-									<div className="circle-clipper right">
-										<div className="circle"></div>
-									</div>
-									</div>
-								</div>
-		this.setState({
-			isSampleBeeningLoad: true
-		});								
 	}
+
+	// load sample 버튼 클릭할때 마다 tag 만 response
 
 	changeGridColumnSize(colSize)
 	{
@@ -489,6 +452,26 @@ class Main extends Component
 		var instances = window.M.FloatingActionButton.init(elems, {
 			direction: 'top'
 		});
+
+		this.audio.onloadedmetadata = () => {
+			this.idxDurationPair.set(this.CUE.CUR, this.audio.duration);
+			console.log("NOW PLAYING:", this.metadatas[this.CUE.CUR].tag, "DURATION:", this.audio.duration);
+			this.queueNextAudio();
+		}
+
+		this.socket.onopen = () => {
+			console.log('WebSocket Client Connected');
+		}
+		this.socket.onmessage = (message) => {
+			this.reader.readAsArrayBuffer(message.data);
+			
+		}
+
+		this.reader.onload = (event) => {
+			this.buffer = new Uint8Array(event.target.result);
+			this.arrFiles[this.CUE.NEXT] = new Blob([this.buffer], { type: 'audio/mpeg' });
+			this.playThenSetDurationLabel();
+		}
 	}
 
 	componentDidUpdate()
