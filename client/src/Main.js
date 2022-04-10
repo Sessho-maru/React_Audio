@@ -1,11 +1,12 @@
 import axios from 'axios';
 import React, { Component } from 'react';
-import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Link, useRouteMatch } from 'react-router-dom';
 import { w3cwebsocket as WebSocket } from "websocket";
 import AudioCard from './AudioCard';
 import AudioInfo from './Audioinfo';
 
-const rootDir = {local: 'http://localhost:3000/', server: 'http://184.72.2.1/'};
+const ROOT_DIR = {local: 'http://localhost:3000/', server: '???'};
+const jsmediatags = require('jsmediatags');
 
 class Main extends Component
 {
@@ -31,8 +32,6 @@ class Main extends Component
 	constructor(props)
 	{
 		super(props);
-		this.jsmediatags = require('jsmediatags');
-
 		this.arrAudioCard = [];
 		this.idxAudioCard = 0;
 		this.idxDurationPair = new Map();
@@ -58,8 +57,6 @@ class Main extends Component
 		this.reader = new FileReader();
 		this.idSampleBeloaded = 0;
 
-		this.buttonLoadSample = <a className="waves-effect waves-light btn-large" onClick={ () => {this.sampleGetTagMeta()} }><i className="material-icons right">cloud</i>Load Sample</a>;
-
 		this.state = {
 			isDone: false,
 			isPlaying: false,
@@ -77,10 +74,10 @@ class Main extends Component
 	}
 
 	isHome = () =>{
-		return window.location.href === rootDir.local;
+		return window.location.href === ROOT_DIR.local;
 	}
 
-	setLabelStateIdxOf = (state, index, idxQueue = 'enqueue') => {
+	setLabelStateIdxOf = (state, index, label = 'enqueue') => {
 		if (this.isHome())
 		{
 			switch(state)
@@ -94,7 +91,7 @@ class Main extends Component
 					this.setCardLabel.toStop.color(index);
 					break;
 				case 'queue-on':
-					this.setCardLabel.toQueueOn.text(index, idxQueue);
+					this.setCardLabel.toQueueOn.text(index, label);
 					this.setCardLabel.toQueueOn.color(index);
 					break;
 				case 'queue-off':
@@ -125,25 +122,23 @@ class Main extends Component
 			if (this.isQueueSheetEmpty() && this.isNextOutOfIdx()) 
 			{
 				this.stop();
+				return;
 			}
-			else
-			{
-				if (!this.isQueueSheetEmpty())
-				{
-					this.CUE.NEXT = this.queueSheet.shift();
-				}
 
-				if (this.isQueuingMode && this.isHome())
-				{
-					this.toggleQueuingMode();
-					this.handlePlay();
-					this.toggleQueuingMode();
-				}
-				else 
-				{
-					this.handlePlay();
-				}
+			if (!this.isQueueSheetEmpty())
+			{
+				this.CUE.NEXT = this.queueSheet.shift();
 			}
+
+			if (this.isQueuingMode && this.isHome())
+			{
+				this.toggleQueuingMode();
+				this.handlePlay();
+				this.toggleQueuingMode();
+				return;
+			}
+
+			this.handlePlay();
 		}, (this.idxDurationPair.get(this.CUE.CUR) - pausedAt) * 1000 );
 	}
 
@@ -168,6 +163,7 @@ class Main extends Component
 					{
 						continue;
 					}
+
 					if (this.queueSheet.includes(index) === true)
 					{
 						this.setLabelStateIdxOf('queue-on', index, this.queueSheet.indexOf(index) + 1);
@@ -227,8 +223,7 @@ class Main extends Component
 		console.log("PLAY");
 		if (this.CUE.CUR === "")
 		{
-
-			if (typeof(this.arrFiles[this.CUE.NEXT]) === "string")
+			if (this.arrFiles[this.CUE.NEXT] === "SOURCING_BY_STREAM")
 			{
 				console.log('Streaming via socket will be started');
 				this.socket.send(this.idSampleBeloaded);
@@ -296,7 +291,6 @@ class Main extends Component
 		this.setState({
 			isPlaying: false
 		});
-
 	}
 
 	initAudioCard = (tag, audio) => {
@@ -309,8 +303,8 @@ class Main extends Component
 				genre: tag.tags.genre,
 				year: tag.tags.year,
 				track: tag.tags.track,
+				albumArtUrl: "",
 			},
-			albumArtUrl: "",
 			index: this.idxAudioCard
 		};
 
@@ -319,14 +313,14 @@ class Main extends Component
 
 		if (tag.tags.picture === undefined) 
 		{
-			metadata.albumArtUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/1200px-No_image_available.svg.png";
+			metadata.tag.albumArtUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/1200px-No_image_available.svg.png";
 		}
 		else
 		{
 			const { data, type } = tag.tags.picture;
 			const byteArray = new Uint8Array(data);
 			const blob = new Blob([byteArray], { type });
-			metadata.albumArtUrl = URL.createObjectURL(blob);
+			metadata.tag.albumArtUrl = URL.createObjectURL(blob);
 		}
 
 		this.arrAudioCard[this.idxAudioCard] =  <div key={this.idxAudioCard} className="container">
@@ -344,7 +338,7 @@ class Main extends Component
 
 		let counter = [...filelist].length;
 		[...filelist].forEach((each) => {
-			this.jsmediatags.read(each, {
+			jsmediatags.read(each, {
 				onSuccess: (tag) => {
 					checker(tag, each.name);
 
@@ -360,9 +354,8 @@ class Main extends Component
 					}
 				},
 				onError: (error) => {
-					console.log("jsmediaTags.read() has been run, but failed" + error);
+					console.log("jsmediaTags.read() has been run, but failed", error);
 					counter--;
-					// checker(undefined, null);
 				}    
 			});
 		});
@@ -409,10 +402,10 @@ class Main extends Component
 		switch(clear)
 		{
 			case true: 
-				document.getElementById('new').click();
+				this.NewAudio.click();
 				break;
 			case false:
-				document.getElementById('append').click();
+				this.AppendAudio.click();
 				break;
 			default:
 				break;
@@ -431,7 +424,7 @@ class Main extends Component
 
 	// load sample 버튼 클릭할때 마다 tag 만 response
 
-	changeGridColumnSize(colSize)
+	setGridColumnSizeTo(colSize)
 	{
 		for(let i = 0; i < this.idxAudioCard; i++)
 		{
@@ -453,10 +446,28 @@ class Main extends Component
 			direction: 'top'
 		});
 
+		this.NewAudio = document.getElementById('new');
+		this.AppendAudio = document.getElementById('append');
+		this.Queue = document.getElementById('queue_icon');
+		this.Shuffle = document.getElementById('shuffle_icon');
+		this.Repeat = document.getElementById('repeat_icon')
+		this.ProgressRange = document.getElementById('range');
+
 		this.audio.onloadedmetadata = () => {
 			this.idxDurationPair.set(this.CUE.CUR, this.audio.duration);
 			console.log("NOW PLAYING:", this.metadatas[this.CUE.CUR].tag, "DURATION:", this.audio.duration);
 			this.queueNextAudio();
+		}
+		this.audio.ontimeupdate = () => {
+			const currentTs = Math.floor(this.audio.currentTime * 1000);
+			const totalTs = Math.floor(this.audio.duration * 1000);
+
+			let calculated = currentTs/totalTs;
+			calculated = calculated * 10000;
+			calculated = Math.floor(calculated);
+			calculated = calculated / 10;
+
+			this.ProgressRange.value = calculated;
 		}
 
 		this.socket.onopen = () => {
@@ -464,7 +475,6 @@ class Main extends Component
 		}
 		this.socket.onmessage = (message) => {
 			this.reader.readAsArrayBuffer(message.data);
-			
 		}
 
 		this.reader.onload = (event) => {
@@ -480,10 +490,14 @@ class Main extends Component
 		console.log("CUE SHEET: ", this.queueSheet);
 		console.log("ARR AUDIO: ", this.arrAudioCard);
 		console.log("============================");
-		if (this.isShuffleMode || this.isRepeatMode) { 
-			document.getElementById('queue_icon').classList.add('queue_disabled'); 
-		}else {
-			document.getElementById('queue_icon').classList.remove('queue_disabled');
+
+		if (this.isShuffleMode || this.isRepeatMode)
+		{
+			this.Queue.classList.add('queue_disabled'); 
+		}
+		else 
+		{
+			this.Queue.classList.remove('queue_disabled');
 		}
 	}
 
@@ -500,13 +514,13 @@ class Main extends Component
 			<div className="row">
 				<div id="nav" className="col xl2 l2 m2 s2">
 					<div id="samplesButton">
-						{ this.buttonLoadSample }
+						<a className="waves-effect waves-light btn-large" onClick={ () => {this.sampleGetTagMeta()} }><i className="material-icons right">cloud</i>Load Sample</a>
 					</div>
 					<div id="gridColSize">
-						<div id="colSize2" className="setColSize" onClick={ () => { this.changeGridColumnSize(2) } }>6</div>
-						<div id="colSize3" className="setColSize" onClick={ () => { this.changeGridColumnSize(3) } }>4</div>
-						<div id="colSize4" className="setColSize" onClick={ () => { this.changeGridColumnSize(4) } }>3</div>
-						<div id="colSize6" className="setColSize" onClick={ () => { this.changeGridColumnSize(6) } }>2</div>
+						<div id="colSize2" className="setColSize" onClick={ () => { this.setGridColumnSizeTo(2) } }>6</div>
+						<div id="colSize3" className="setColSize" onClick={ () => { this.setGridColumnSizeTo(3) } }>4</div>
+						<div id="colSize4" className="setColSize" onClick={ () => { this.setGridColumnSizeTo(4) } }>3</div>
+						<div id="colSize6" className="setColSize" onClick={ () => { this.setGridColumnSizeTo(6) } }>2</div>
 					</div>
 					<div className="fixed-action-btn">
 						<a className="btn-floating btn-small indigo lighten-2"><i className="large material-icons">add</i></a>
@@ -537,8 +551,8 @@ class Main extends Component
 								<div className="queue waves-effect waves-light">
 									<i id="queue_icon" className="medium material-icons" onClick={ (event) => { 
 											this.isQueuingMode === false ? event.target.classList.add('clicked') : event.target.classList.remove('clicked');
-											if (this.isShuffleMode === true) { document.getElementById('shuffle_icon').classList.remove('clicked'); this.isShuffleMode = false; }
-											if (this.isRepeatMode === true) { document.getElementById('repeat_icon').classList.remove('clicked'); this.isRepeatMode = false; }
+											if (this.isShuffleMode === true) { this.Shuffle.classList.remove('clicked'); this.isShuffleMode = false; }
+											if (this.isRepeatMode === true) { this.Repeat.classList.remove('clicked'); this.isRepeatMode = false; }
 											this.toggleQueuingMode();
 										}}>{"plus_one"}</i>
 								</div>
@@ -547,8 +561,8 @@ class Main extends Component
 											this.isShuffleMode === false ? event.target.classList.add('clicked') : event.target.classList.remove('clicked');
 											this.isShuffleMode = !(this.isShuffleMode);
 											if (this.audio !== null) { this.queueNextAudio(this.audio.currentTime); }
-											if (this.isRepeatMode === true) { document.getElementById('repeat_icon').classList.remove('clicked'); this.isRepeatMode = false; }
-											if (this.isQueuingMode === true) { document.getElementById('queue_icon').classList.remove('clicked'); this.toggleQueuingMode(); }
+											if (this.isRepeatMode === true) { this.Repeat.classList.remove('clicked'); this.isRepeatMode = false; }
+											if (this.isQueuingMode === true) { this.Queue.classList.remove('clicked'); this.toggleQueuingMode(); }
 											this.setState({isNeedToReRender: true});
 										}}>{"shuffle"}</i>
 								</div>
@@ -557,8 +571,8 @@ class Main extends Component
 											this.isRepeatMode === false ? event.target.classList.add('clicked') : event.target.classList.remove('clicked')
 											this.isRepeatMode = !(this.isRepeatMode);
 											if (this.audio !== null) { this.queueNextAudio(this.audio.currentTime); }
-											if (this.isShuffleMode === true) { document.getElementById('shuffle_icon').classList.remove('clicked'); this.isShuffleMode = false; }
-											if (this.isQueuingMode === true) { document.getElementById('queue_icon').classList.remove('clicked'); this.toggleQueuingMode(); }
+											if (this.isShuffleMode === true) { this.Shuffle.classList.remove('clicked'); this.isShuffleMode = false; }
+											if (this.isQueuingMode === true) { this.Queue.classList.remove('clicked'); this.toggleQueuingMode(); }
 											this.setState({isNeedToReRender: true});
 										}}>{"repeat_one"}</i>
 								</div>
@@ -580,6 +594,10 @@ class Main extends Component
 
 				<input type="file" accept="audio/*" id="new" onChange={ (event) => {this.handleFilelistThenAssignArrAudio(event.target.files, true)} } multiple hidden preload="metadata"/>
 				<input type="file" accept="audio/*" id="append" onChange={ (event) => {this.handleFilelistThenAssignArrAudio(event.target.files, false)} } multiple hidden preload="metadata"/>
+
+				<div className="progressBar">
+					<input id="range" type="range" step="0.1" defaultValue="0.0" begin="00:00" end="00:00" min="0" max="1000"/>
+				</div>
 			</div>
 		);
 	}
@@ -589,8 +607,17 @@ export default Main;
 
 /*
 	TODO:
-		display error
+		display no tag warning
 		loading screen
+		this.audio !== null -> this.audio.src !== undefined ?
+
+		implementing streaming
+		implementing progressBar
+
+		streaming from Youtube #https://github.com/microlinkhq/youtube-dl-exec
+		writing tag #https://github.com/Zazama/node-id3
+		lyrics #https://github.com/zyrouge/node-genius-lyrics
+		gapless #https://stackoverflow.com/questions/7330023/gapless-looping-audio-html5
 
 		read
 		https://codeburst.io/how-to-not-react-common-anti-patterns-and-gotchas-in-react-40141fe0dcd

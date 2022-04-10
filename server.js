@@ -15,7 +15,7 @@ let ytSearch = "";
 
 let byteArray = [];
 let idxNetAudioByteFrom = 0;
-const halfKb = 500 * 1000;
+const halfMB = 500 * 1000;
 
 const tunes = [
 	{ id: 0, src: __dirname + '/samples/Angel Love.mp3' },
@@ -134,12 +134,12 @@ app.get('/api/samples/tag', (req, res) => {
 
 app.ws('/', (ws) => {
 	ws.on('message', (id) => {
-        let buffer = byteArray[id].slice(idxNetAudioByteFrom, idxNetAudioByteFrom + halfKb);
+        let buffer = byteArray[id].slice(idxNetAudioByteFrom, idxNetAudioByteFrom + halfMB);
         ws.send(Uint8Array.from(buffer));
 		// let i = 0;
 		// while(true)
 		// {
-		// 	if (!(i < halfKb))
+		// 	if (!(i < halfMB))
 		// 	{
 		// 		break;
 		// 	}

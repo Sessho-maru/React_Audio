@@ -3,6 +3,7 @@ import TagInfo from './TagInfo';
 import YTInfo from './YTInfo';
 
 const axios = require('axios');
+let propsWhenNoProps = null;
 
 class AudioInfo extends Component
 {
@@ -12,12 +13,26 @@ class AudioInfo extends Component
         this.YTMetas = [];
         this.preloader = "";
         this.timeoutId = "";
-        this.tag = props.location.tag;
+        this.tag = (props.location.tag === undefined) 
+                    ? propsWhenNoProps
+                    : props.location.tag;
         
-        this.isFetchable = (this.tag.title !== 'untitled') && (this.tag.artist !== "") ? true : false;
+        this.isFetchable = (this.tag.title !== 'untitled') && (this.tag.artist !== "") 
+                            ? true 
+                            : false;
+
         this.state = { 
             isLoaded: false 
         };
+    }
+
+    componentWillUnmount()
+    {
+        if (this.props.history.action === "POP")
+        {
+            propsWhenNoProps = this.tag;
+            console.log(propsWhenNoProps);
+        }
     }
 
     componentDidMount()
@@ -38,6 +53,8 @@ class AudioInfo extends Component
             .catch( (err) => {
                 console.log(err);
             });
+
+        console.log(propsWhenNoProps);
     }
 
     getYTObj()
@@ -105,7 +122,7 @@ class AudioInfo extends Component
             <div className="row">
                 <div className="container">
                     <div className="col xl7 l5 m3 s1">
-                        <TagInfo albumArt={ this.props.location.albumArtUrl }/>
+                        <TagInfo albumArt={ this.tag.albumArtUrl }/>
                     </div>
                     <div className="col xl5 l7 m9 s11">
                         <div id="YTcontent">

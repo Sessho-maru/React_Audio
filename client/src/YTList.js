@@ -4,7 +4,7 @@ function YTList(props)
 {
     return (
         <div className="col xl12 l12 m12 s12">
-            <div className="card-panel grey hoverable lighten-5 z-depth-1">
+            <div id="ytCard" className="card-panel grey hoverable lighten-5 z-depth-1">
                 <div className="row valign-wrapper">
                     <div className="col xl6 l6 m6 s6">
                         <img src={ props.ytMeta.thumbnailUrl } className="responsive-img" width="237" height="132"/>

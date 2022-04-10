@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
 
 function AudioCard(props)
@@ -11,7 +11,7 @@ function AudioCard(props)
             <div className={ `card hoverable ${small}` }>
                 <Link to={ props.audioMetadata }>
                     <div className="card-image">
-                        <img src={ props.audioMetadata.albumArtUrl } />
+                        <img src={ props.audioMetadata.tag.albumArtUrl } />
                     </div>
                     <div className="card-content">
                         <p>{ props.audioMetadata.tag.title }</p>

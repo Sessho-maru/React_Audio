@@ -96,7 +96,7 @@ code {
 /* ============================================================================== */
 
 .App #content {
-  height:87vh;
+  height:80vh;
   display:block;
   overflow:auto;
   margin-top: 10px;
@@ -111,15 +111,15 @@ code {
 
 
 .App #preloader {
-  height: 83vh;
+  height: 80vh;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .App #YTcontent {
-  height: 85vh;
-  display:block;
-  overflow:auto;
+  height: 80vh;
+  display: block;
+  overflow: auto;
 }
 .App #YTcontent h5:hover {
   color: #3bc7ff;
@@ -129,7 +129,7 @@ code {
 
 
 .App #imgDiv {
-  height:82vh;
+  height: 80vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -137,6 +137,10 @@ code {
 .App #showImg {
   max-width: 800px;
   max-height: 800px;
+}
+
+.App #ytCard {
+  overflow: hidden;
 }
 
 
@@ -196,4 +200,39 @@ code {
 .App .fileSelector {
   margin-top: 4px;
   font-family:Verdana, Geneva, Tahoma, sans-serif;
+}
+
+.progressBar {
+  position: absolute;
+  width: 76vw;
+  height: 50px;
+  left: 18.7%;
+  top: 93%;
+  border-radius: 15px;
+  background-color: white;
+  box-shadow: 0px 10px 10px 5px rgba(132, 132, 132, 0.3);
+  display: flex;
+}
+
+.progressBar:hover {
+  background-color: #f3f6f4;
+}
+
+.progressBar #range {
+  border: none;
+  padding-left: 36px;
+  padding-right: 26px;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  background: #f4511c;
+  transition-duration: 100ms;
+  /* importat needed */
+}
+
+.progressBar #range:after {
+	content: attr(begin) ' / ' attr(end);
+  margin-left: 30px;
+  font-family:Verdana, Geneva, Tahoma, sans-serif;
+  font-size: 0.8rem;
 }
