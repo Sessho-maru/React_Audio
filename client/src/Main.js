@@ -7,6 +7,7 @@ import AudioInfo from './Audioinfo';
 
 const ROOT_DIR = {local: 'http://localhost:3000/', server: '???'};
 const jsmediatags = require('jsmediatags');
+const str = "This is test From origin/master";
 
 class Main extends Component
 {
