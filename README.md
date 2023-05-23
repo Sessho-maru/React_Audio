@@ -29,7 +29,7 @@ this.idxAudioCard: Number // this.arrAudioCard の index
 this.CUE: Object // 再生をコントロールする為、オーディオの index を指定
                     // CUR: Number 今、プレイ中のオーディオ index
                     // NEXT: Number 次プレイするオーディオ index
-this.idxDurationPair: Map(index: number, duration: number) // 格音楽の index と再生の長さ(duration)を持つ Map
+this.idxDurationPair: Map(index: number, duration: number) // 各音楽の index と再生の長さ(duration)を持つ Map
 ```
 
 ### 0 ) ユーザーからのオーディオファイル _input_ 処理
@@ -50,7 +50,7 @@ _**input**_ されたオーディオファイルを `this.arrAudioCard` に _**a
 `this.arrAudioCard` を初期化した後 _**append**_ します。</br>
 
 [openFileDialog( _**clear: bool**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L401-L413)　から</br>
-格 `<input type="file" accept="audio/*">`　ノード
+各 `<input type="file" accept="audio/*">`　ノード
 ```JSX
 <input type="file" accept="audio/*" id="new" onChange={ (event) => {this.handleFileListThenAssignArrAudio(event.target.files, true)} } multiple hidden preload="metadata"/>
 <input type="file" accept="audio/*" id="append" onChange={ (event) => {this.handleFileListThenAssignArrAudio(event.target.files, false)} } multiple hidden preload="metadata"/>
@@ -63,7 +63,7 @@ handleFileListThenAssignArrAudio( _**flieLilst: FileList, clear: bool**_ ) が�
 [handleFileListThenAssignArrAudio( _**flieLilst: FileList, clear: bool**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L364-L399)　から</br>
 ユーザーによって _**input**_ された `fileList` をチェックして分岐します。
 #### case 1 : パラメタ `clear` が _true_ にセットされた場合
-初期化する為、 まず `this.arrAudioCard` が空いているかチェックして `this.arrAudioCard` 含んで[メンバー変数たちを初期化します](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L369-L375)。</br>
+初期化する為、 まず `this.arrAudioCard` が空いているかチェックして `this.arrAudioCard` 含め[メンバー変数たちを初期化します](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L369-L375)。</br>
 その時、 もしオーディオが再生中だったら、　オーディオを停止して `this.audio` を[初期化すます](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L377-L388)
 #### case 2 : `fileList` が空いている場合
 新しく `this.arrAudioCard` に割り当てるオーディオファイルがない為、 [すぐ _return_ します](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L393-L397)。
@@ -73,8 +73,8 @@ handleFileListThenAssignArrAudio( _**flieLilst: FileList, clear: bool**_ ) が�
 </br>
 
 ### 1 ) オーディオタグを読み取って `<AudioCard>` を初期化してページをに表示
-fetchTagThenInitCard( _**fileList: FileList**_ )　ではパラメタ `flieList` を _forEach_ で格要素を巡回して格ファイルからタグを取ります。</br>
-格 _loop_ では外部ライブラリ `this.jsmediatags` の _async function_ [read( _**each: File**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L340) を呼び出してオーディオファイルからタグ情報を取ります。</br>
+fetchTagThenInitCard( _**fileList: FileList**_ )　ではパラメタ `flieList` を _forEach_ で各要素を巡回して各ファイルからタグを取ります。</br>
+各 _loop_ では外部ライブラリ `this.jsmediatags` の _async function_ [read( _**each: File**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L340) を呼び出してオーディオファイルからタグ情報を取ります。</br>
 read( _**each: File**_ ) が成功したら _callback_ `onSuccess()`　が実行されます。
 ```JSX
 onSuccess: (tag) => {
@@ -94,7 +94,7 @@ onSuccess: (tag) => {
 ```
 `onSuccess()` で読み取ったタグ(`tag`)とオーディオファイル(`each`)をパラメタにする　[initAudioCard( _**tag: Object, audio: File**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L295-L328) を呼び出します。</br>
 後、 `this.arrAudioCard` の _index_ である　`this.idxAudioCard` は 1つづ足す、</br>
-`onSuccess()` は非同期的に実行される為、 最後の _loop_ で `setState()` を実行する為の変数 [`counter`](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L338)　は　1つづ引きます。
+`onSuccess()` は非同期的に実行、 最後の _loop_ で `setState()` を呼び出す為の変数 [`counter`](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L338)　は　1つづ引きます。
 
 </br>
 
@@ -113,7 +113,7 @@ this.arrAudioCard[this.idxAudioCard] =  <div key={this.idxAudioCard} className="
 
 #### _play={ this.handlePlay }
 `<Main>` から定義された `this.handlePlay` を渡します。</br>
-Javascript では関数も基本的に参照渡しの為 _function pointer_ の形で渡されます。
+Javascript では関数も基本的に参照渡しである為 _function pointer_ の形で渡されます。
 
 #### audioMetadata={ metadata }
 `metadata` オブジェクトを渡します。
@@ -143,14 +143,15 @@ let metadata = {
     </div>
 </Link>
 ```
-_path_ _**/:audioIndex**_ は `<Router>` によって YouTube クローリング結果を並べる他のコンポーネント `<AudioInfo>` と[繋がります](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L575-L578)。
+_path_ _**/:audioIndex**_ は `<Router>` によって YouTube クローリング結果をディスプレーする</br>
+他のコンポーネント `<AudioInfo>` と[繋がります](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L575-L578)。
 ```JSX
 <Router>
   <Route exact path="/" render={ () => { return (this.arrAudioCard); }}/>
   <Route exact path="/:audioIndex" component={AudioInfo} />
 </Router>
 ```
-なので、 `<AudioCard>` コンポーネントをクリックしたら `<Link>` によって url が _**/:audioIndex**_ に移動されると同時に</br>
+なので、 `<AudioCard>` コンポーネントをクリックしたら `<Link>` によって url が _**/:audioIndex**_ に移動される事と同時に</br>
 `<Router>` によって `<Main>` コンポーネントではなくて `<AudioInfo>` がページにレンダリングされます。
 
 </br>
