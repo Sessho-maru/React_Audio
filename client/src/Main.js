@@ -452,24 +452,24 @@ class Main extends Component
 		this.Queue = document.getElementById('queue_icon');
 		this.Shuffle = document.getElementById('shuffle_icon');
 		this.Repeat = document.getElementById('repeat_icon')
-		this.ProgressRange = document.getElementById('range');
+		// this.ProgressRange = document.getElementById('range');
 
 		this.audio.onloadedmetadata = () => {
 			this.idxDurationPair.set(this.CUE.CUR, this.audio.duration);
 			console.log("NOW PLAYING:", this.metadatas[this.CUE.CUR].tag, "DURATION:", this.audio.duration);
 			this.queueNextAudio();
 		}
-		this.audio.ontimeupdate = () => {
-			const currentTs = Math.floor(this.audio.currentTime * 1000);
-			const totalTs = Math.floor(this.audio.duration * 1000);
+		// this.audio.ontimeupdate = () => {
+		// 	const currentTs = Math.floor(this.audio.currentTime * 1000);
+		// 	const totalTs = Math.floor(this.audio.duration * 1000);
 
-			let calculated = currentTs/totalTs;
-			calculated = calculated * 10000;
-			calculated = Math.floor(calculated);
-			calculated = calculated / 10;
+		// 	let calculated = currentTs/totalTs;
+		// 	calculated = calculated * 10000;
+		// 	calculated = Math.floor(calculated);
+		// 	calculated = calculated / 10;
 
-			this.ProgressRange.value = calculated;
-		}
+		// 	this.ProgressRange.value = calculated;
+		// }
 
 		this.socket.onopen = () => {
 			console.log('WebSocket Client Connected');
@@ -514,9 +514,9 @@ class Main extends Component
 		return (
 			<div className="row">
 				<div id="nav" className="col xl2 l2 m2 s2">
-					<div id="samplesButton">
+					{/* <div id="samplesButton">
 						<a className="waves-effect waves-light btn-large" onClick={ () => {this.sampleGetTagMeta()} }><i className="material-icons right">cloud</i>Load Sample</a>
-					</div>
+					</div> */}
 					<div id="gridColSize">
 						<div id="colSize2" className="setColSize" onClick={ () => { this.setGridColumnSizeTo(2) } }>6</div>
 						<div id="colSize3" className="setColSize" onClick={ () => { this.setGridColumnSizeTo(3) } }>4</div>
@@ -596,9 +596,9 @@ class Main extends Component
 				<input type="file" accept="audio/*" id="new" onChange={ (event) => {this.handleFilelistThenAssignArrAudio(event.target.files, true)} } multiple hidden preload="metadata"/>
 				<input type="file" accept="audio/*" id="append" onChange={ (event) => {this.handleFilelistThenAssignArrAudio(event.target.files, false)} } multiple hidden preload="metadata"/>
 
-				<div className="progressBar">
+				{/* <div className="progressBar">
 					<input id="range" type="range" step="0.1" defaultValue="0.0" begin="00:00" end="00:00" min="0" max="1000"/>
-				</div>
+				</div> */}
 			</div>
 		);
 	}

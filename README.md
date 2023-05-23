@@ -16,9 +16,8 @@
 
 
 
-### [DEMO](http://184.72.2.1/)
-アプリテストの為、オーディオファイルをいくつか用意しました。</br>
-[No Copyright Audio (google drive)](https://drive.google.com/file/d/189yn4UCuL9iFMbJ9hrBz5q2_kzAsTRsh/view?usp=sharing)
+
+[テスト用オーディオサンプル (google drive)](https://drive.google.com/drive/folders/1JOazYufwSyAIV3mDmW8my_AgiOfxwI8n?usp=sharing)
 
 </br>
 
@@ -176,7 +175,9 @@ expressサーバーを稼働
 ```
 ----------------CORS-enabled web server listening on port 5000----------------
 ```
-サーバーが効いた上で、/clientディレクトリーで以下を入力
+サーバーが効いた上で、/clientディレクトリーで以下を入力</br></br>
+❗❗❗ nodejs バージョン v17 以上からは `error:0308010C:digital envelope routines::unsupported` エラーが起きて起動出来ません。</br>
+バージョン v14 以下(v14.17.3) で正常稼働確認済
 ```
   @ .../React_Audio-master/client
   npm start

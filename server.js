@@ -3,7 +3,7 @@ const cors = require('cors');
 const app = express();
 const axios = require('axios');
 const cheerio = require('cheerio');
-const jsmediaTag = require('jsmediatags');
+// const jsmediaTag = require('jsmediatags');
 const expressWs = require('express-ws')(app);
 const fs = require('fs');
 
@@ -114,23 +114,23 @@ app.get('/api/get', (req, res) => {
     }
 });
 
-app.get('/api/samples/tag', (req, res) => {
-    const source = tunes[req.query.id].src;
-    fs.readFile(source, (err, data) => {
-        if(err) throw err;
+// app.get('/api/samples/tag', (req, res) => {
+//     const source = tunes[req.query.id].src;
+//     fs.readFile(source, (err, data) => {
+//         if(err) throw err;
 
-		byteArray.push(data);
-		jsmediaTag.read(data, {
-			onSuccess: (tag) => {
-                idxNetAudioByteFrom = tag.size;
-				res.status(200).send({msg: "Tag metadata fetched.", body: tag});
-			},
-			onError: (error) => {
-				console.log(error);
-			}    
-		});
-    });
-});
+// 		byteArray.push(data);
+// 		jsmediaTag.read(data, {
+// 			onSuccess: (tag) => {
+//                 idxNetAudioByteFrom = tag.size;
+// 				res.status(200).send({msg: "Tag metadata fetched.", body: tag});
+// 			},
+// 			onError: (error) => {
+// 				console.log(error);
+// 			}    
+// 		});
+//     });
+// });
 
 app.ws('/', (ws) => {
 	ws.on('message', (id) => {
