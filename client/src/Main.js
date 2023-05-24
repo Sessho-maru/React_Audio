@@ -54,9 +54,9 @@ class Main extends Component
 		this.isRepeatMode = false;
 
 		this.buffer = [];
-		this.socket = new WebSocket("ws://localhost:5000/");
-		this.reader = new FileReader();
-		this.idSampleBeloaded = 0;
+		// this.socket = new WebSocket("ws://localhost:5000/");
+		// this.reader = new FileReader();
+		// this.idSampleBeloaded = 0;
 
 		this.state = {
 			isDone: false,
@@ -224,12 +224,12 @@ class Main extends Component
 		console.log("PLAY");
 		if (this.CUE.CUR === "")
 		{
-			if (this.arrFiles[this.CUE.NEXT] === "SOURCING_BY_STREAM")
-			{
-				console.log('Streaming via socket will be started');
-				this.socket.send(this.idSampleBeloaded);
-				return;
-			}
+			// if (this.arrFiles[this.CUE.NEXT] === "SOURCING_BY_STREAM")
+			// {
+			// 	console.log('Streaming via socket will be started');
+			// 	this.socket.send(this.idSampleBeloaded);
+			// 	return;
+			// }
 
 			this.playThenSetDurationLabel();
 
@@ -265,7 +265,7 @@ class Main extends Component
 		}
 		else
 		{
-			if (this.audio !== null)
+			if (this.audio.src !== '')
 			{
 				console.log("PLAY");
 				this.audio.play();
@@ -375,7 +375,7 @@ class Main extends Component
 				this.metadatas = [];
 				this.queueSheet = [];
 
-				if (this.audio !== null)
+				if (this.audio.src !== '')
 				{
 					if (this.state.isPlaying === true)
 					{
@@ -384,7 +384,7 @@ class Main extends Component
 							isPlaying: false,
 						});
 					}
-					this.audio = null;
+					this.audio = new Audio();
 					this.pausedAt = 0;
 				}
 				this.CUE.CUR = "";
@@ -413,15 +413,15 @@ class Main extends Component
 		}
 	}
 
-	sampleGetTagMeta = () => {
-		axios.get(`/api/samples/tag?id=${this.idSampleBeloaded}`)
-			.then((res) => {
-				this.initAudioCard(res.data.body, "SOURCING_BY_STREAM");
-				this.setState({
-					isSampleBeeningLoad: true
-				});
-			});
-	}
+	// sampleGetTagMeta = () => {
+	// 	axios.get(`/api/samples/tag?id=${this.idSampleBeloaded}`)
+	// 		.then((res) => {
+	// 			this.initAudioCard(res.data.body, "SOURCING_BY_STREAM");
+	// 			this.setState({
+	// 				isSampleBeeningLoad: true
+	// 			});
+	// 		});
+	// }
 
 	// load sample 버튼 클릭할때 마다 tag 만 response
 
@@ -471,18 +471,18 @@ class Main extends Component
 		// 	this.ProgressRange.value = calculated;
 		// }
 
-		this.socket.onopen = () => {
-			console.log('WebSocket Client Connected');
-		}
-		this.socket.onmessage = (message) => {
-			this.reader.readAsArrayBuffer(message.data);
-		}
+		// this.socket.onopen = () => {
+		// 	console.log('WebSocket Client Connected');
+		// }
+		// this.socket.onmessage = (message) => {
+		// 	this.reader.readAsArrayBuffer(message.data);
+		// }
 
-		this.reader.onload = (event) => {
-			this.buffer = new Uint8Array(event.target.result);
-			this.arrFiles[this.CUE.NEXT] = new Blob([this.buffer], { type: 'audio/mpeg' });
-			this.playThenSetDurationLabel();
-		}
+		// this.reader.onload = (event) => {
+		// 	this.buffer = new Uint8Array(event.target.result);
+		// 	this.arrFiles[this.CUE.NEXT] = new Blob([this.buffer], { type: 'audio/mpeg' });
+		// 	this.playThenSetDurationLabel();
+		// }
 	}
 
 	componentDidUpdate()
@@ -561,7 +561,7 @@ class Main extends Component
 									<i id="shuffle_icon" className="medium material-icons" onClick={ (event) => {
 											this.isShuffleMode === false ? event.target.classList.add('clicked') : event.target.classList.remove('clicked');
 											this.isShuffleMode = !(this.isShuffleMode);
-											if (this.audio !== null) { this.queueNextAudio(this.audio.currentTime); }
+											if (this.audio.src !== '') { this.queueNextAudio(this.audio.currentTime); }
 											if (this.isRepeatMode === true) { this.Repeat.classList.remove('clicked'); this.isRepeatMode = false; }
 											if (this.isQueuingMode === true) { this.Queue.classList.remove('clicked'); this.toggleQueuingMode(); }
 											this.setState({isNeedToReRender: true});
@@ -571,7 +571,7 @@ class Main extends Component
 									<i id="repeat_icon" className="medium material-icons" onClick={ (event) => { 
 											this.isRepeatMode === false ? event.target.classList.add('clicked') : event.target.classList.remove('clicked')
 											this.isRepeatMode = !(this.isRepeatMode);
-											if (this.audio !== null) { this.queueNextAudio(this.audio.currentTime); }
+											if (this.audio.src !== '') { this.queueNextAudio(this.audio.currentTime); }
 											if (this.isShuffleMode === true) { this.Shuffle.classList.remove('clicked'); this.isShuffleMode = false; }
 											if (this.isQueuingMode === true) { this.Queue.classList.remove('clicked'); this.toggleQueuingMode(); }
 											this.setState({isNeedToReRender: true});
