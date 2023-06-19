@@ -143,7 +143,7 @@ let metadata = {
     </div>
 </Link>
 ```
-_path_ _**/:audioIndex**_ は `<Router>` によって YouTube クローリング結果表示する `<AudioInfo>` と繋がります[繋がります](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L590-L593)。</br>
+_path_ _**/:audioIndex**_ は `<Router>` によって YouTube クローリング結果を表示する `<AudioInfo>` と[繋がります](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L590-L593)。</br>
 ```JSX
 <Router>
   <Route exact path="/" render={ () => { return (this.arrAudioCard); }}/>
