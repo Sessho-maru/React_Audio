@@ -156,15 +156,11 @@ _path_ _**/:audioIndex**_ は `<Router>` によって YouTube クローリング
 # ローカル設置方法
 nodeパッケージ設置
 ```
-  @ .../React_Audio-master
   npm run install_app
 ```
 
 expressサーバーを稼働
 ```
-  @ .../React_Audio-master
-  node server
-  or
   node server.js
 ```
 <br/>
@@ -172,10 +168,9 @@ expressサーバーを稼働
 ```
 ----------------CORS-enabled web server listening on port 5000----------------
 ```
-サーバーが効いた上で、/clientディレクトリーで以下を入力</br></br>
+サーバーが効いている上、/client ディレクトリーに移動して</br></br>
 ❗❗❗ nodejs バージョン v17 以上からは `error:0308010C:digital envelope routines::unsupported` エラーが起きて起動出来ません。</br>
 バージョン v14 以下(v14.17.3) で正常稼働確認済
 ```
-  @ .../React_Audio-master/client
   npm start
 ```
