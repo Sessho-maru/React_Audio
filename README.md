@@ -14,11 +14,6 @@ Single page Web music player です。
   - タグ情報をキーワードとして YouTube 検索を行い、その結果をページに表示ます<br/>
     <br/><img src="https://raw.githubusercontent.com/Sessho-maru/React_Audio/master/example.gif"/><br/><br/><br/>
 
-
-
-
-[テスト用オーディオサンプル (google drive)](https://drive.google.com/drive/folders/1JOazYufwSyAIV3mDmW8my_AgiOfxwI8n?usp=sharing)
-
 </br>
 
 # プログラムの概略的なフロー
