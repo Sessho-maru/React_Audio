@@ -27,7 +27,10 @@ this.CUE: Object // 再生を制御する為、オーディオの index を指�
 this.idxDurationPair: Map(index: number, duration: number) // オーディオの index と再生の長さ(duration)を持つ Map
 ```
 
-### 0 ) ユーザーからのオーディオファイル _input_ 処理
+</br>
+</br>
+
+## ユーザーからのオーディオファイル _input_ 処理
 #### * ユーザーからオーディオファイル _**input**_ を貰います。
 _**input**_ モードは２つが有ります。</br>
 #### ADD
@@ -66,8 +69,9 @@ handleFileListThenAssignArrAudio( _**flieLilst: FileList, clear: bool**_ ) が�
 [fetchTagThenInitCard( _**fileList: FileList**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L332-L363)　を呼び出します。
 
 </br>
+</br>
 
-### 1 ) タグを読み取って `<AudioCard>` を初期化してページをに表示
+## タグを読み取って `<AudioCard>` を初期化してページをに表示
 fetchTagThenInitCard( _**fileList: FileList**_ )　はパラメタ `flieList` を _forEach_ で要素を巡って各ファイルからタグを取ります。</br>
 各 _loop_ では外部ライブラリ `this.jsmediatags` の _async function_ [read( _**each: File**_ )](https://github.com/Sessho-maru/React_Audio/blob/master/client/src/Main.js#L342) を呼び出してオーディオファイルからタグ情報を取ります。</br>
 read( _**each: File**_ ) が成功したら _callback_ `onSuccess()` が実行されます。
