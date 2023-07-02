@@ -169,7 +169,6 @@ expressサーバーを稼働
 ```
 サーバーが効いている上、/client ディレクトリーに移動して</br></br>
 ❗❗❗ nodejs バージョン v17 以上からは `error:0308010C:digital envelope routines::unsupported` エラーが起きて起動出来ません。</br>
-バージョン v14 以下(v14.17.3) で正常稼働確認済
 ```
   npm start
 ```
